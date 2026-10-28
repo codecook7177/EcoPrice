@@ -1,2 +1,2 @@
 # EcoPrice
-A Dynamic spoilage prediction and Pricing system
+A Real time Dynamic pricing and Spoilage prediction system.
