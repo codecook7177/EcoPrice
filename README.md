@@ -212,7 +212,6 @@ Open **`http://127.0.0.1:5000`** in your browser.
 | `/api/reset-dataset` | `POST` | Protected | Restores database, inventory caches, and settings to golden factory baseline. |
 
 ---
-
 ## License
 
 This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
