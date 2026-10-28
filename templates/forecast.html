@@ -1,0 +1,366 @@
+{% extends "base_app.html" %}
+{% block title %}Demand Forecasting - EcoPrice{% endblock %}
+{% block page_title %}FORECASTING{% endblock %}
+
+{% block content %}
+<!-- ── Page Header ── -->
+<div class="page-header-receipt">
+    <div class="label-group">
+        <span class="kpi-label" style="margin-top:0;">01</span>
+        <span class="kpi-label" style="margin-top:0;">SYS / XGBOOST FORECAST</span>
+    </div>
+    <div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px;">
+        <div>
+            <h1 class="page-heading">Demand Forecasting</h1>
+            <p class="page-brief">XGBoost-powered demand predictions trained on Kerala retail patterns to optimize inventory and prevent perishable stockouts.</p>
+        </div>
+        <div style="display:flex; align-items:center; gap:12px;">
+            <label for="product-selector" style="font-family:'Space Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:1px; opacity:0.7;">SELECT PRODUCT:</label>
+            <select id="product-selector" class="forecast-product-select">
+                <option value="all">ALL ({{ forecast.products|length }}) PERISHABLES</option>
+                {% for product in forecast.products %}
+                <option value="{{ product }}">{{ product | upper }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+</div>
+
+<!-- ── Accuracy Gauges Row ── -->
+<div class="page-grid cols-3" style="margin-bottom:24px;">
+    <div class="gauge-ticket">
+        <span class="kpi-label" style="margin-top:0;">METRIC // 01</span>
+        <div class="gauge-value" id="gauge-rmse" style="margin-top:8px;">{{ forecast.accuracy.rmse | default('2.8') }}</div>
+        <div class="gauge-label">RMSE (ROOT MEAN SQ ERROR)</div>
+        <span style="font-family:'Playfair Display',serif; font-style:italic; font-size:11px; opacity:0.6; display:block; margin-top:4px;">Low error across daily sales batches</span>
+    </div>
+
+    <div class="gauge-ticket">
+        <span class="kpi-label" style="margin-top:0;">METRIC // 02</span>
+        <div class="gauge-value" id="gauge-mae" style="margin-top:8px;">{{ forecast.accuracy.mae | default('2.3') }}</div>
+        <div class="gauge-label">MAE (MEAN ABSOLUTE ERROR)</div>
+        <span style="font-family:'Playfair Display',serif; font-style:italic; font-size:11px; opacity:0.6; display:block; margin-top:4px;">Average deviation of &plusmn;{{ forecast.accuracy.mae | default('2.3') }} units</span>
+    </div>
+
+    <div class="gauge-ticket" style="background:var(--color-accent);">
+        <span class="kpi-label" style="margin-top:0;">METRIC // 03</span>
+        <div class="gauge-value" id="gauge-mape" style="margin-top:8px;">{{ forecast.accuracy.mape | default('5.7') }}%</div>
+        <div class="gauge-label">MAPE (PERCENTAGE ERROR)</div>
+        <span style="font-family:'Playfair Display',serif; font-style:italic; font-size:11px; opacity:0.6; display:block; margin-top:4px;">Model test accuracy on Kerala dataset</span>
+    </div>
+</div>
+
+<!-- ── Main Chart Row ── -->
+<div class="page-grid cols-8-4" style="margin-bottom:24px;">
+    <!-- Predicted vs Actual Demand Ticket -->
+    <div class="chart-ticket">
+        <div class="segment" style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <span class="kpi-label" style="margin-top:0;">02</span>
+                <h3 style="font-family:'Playfair Display',serif; font-size:24px; font-weight:700; margin-top:4px;">Predicted vs Actual Demand</h3>
+            </div>
+            <div style="display:flex; align-items:center; gap:16px;">
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <span style="display:inline-block; width:16px; height:2px; background:#b8d4c8; border-top:1px dashed #6db89a;"></span>
+                    <span style="font-family:'Space Mono',monospace; font-size:10px; text-transform:uppercase;">PREDICTED</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <span style="display:inline-block; width:16px; height:3px; background:#7b9ea8;"></span>
+                    <span style="font-family:'Space Mono',monospace; font-size:10px; text-transform:uppercase;">ACTUAL</span>
+                </div>
+            </div>
+        </div>
+        <div class="segment-mid">
+            <div class="chart-area">
+                <canvas id="forecastChart" style="max-height:280px;"></canvas>
+            </div>
+        </div>
+        <div class="segment-bottom" style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-family:'Space Mono',monospace; font-size:9px; text-transform:uppercase; letter-spacing:1px; opacity:0.5;">7-DAY ROLLING HORIZON // XGBOOST INFERENCE</span>
+            <div class="barcode-deco short"></div>
+        </div>
+    </div>
+
+    <!-- Feature Importance Ticket -->
+    <div class="chart-ticket">
+        <div class="segment">
+            <span class="kpi-label" style="margin-top:0;">03</span>
+            <h3 style="font-family:'Playfair Display',serif; font-size:24px; font-weight:700; margin-top:4px;">Feature Weights</h3>
+        </div>
+        <div class="segment-mid">
+            <div class="chart-area">
+                <canvas id="featuresChart" style="max-height:280px;"></canvas>
+            </div>
+        </div>
+        <div class="segment-bottom" style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-family:'Space Mono',monospace; font-size:9px; text-transform:uppercase; letter-spacing:1px; opacity:0.5;">TOP PREDICTIVE FACTORS</span>
+            <div class="barcode-deco short"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Model Metadata & 7-Day Ledger Table ── -->
+<div class="page-grid cols-4-8" style="margin-bottom:24px;">
+    <!-- Model Architecture Ticket -->
+    <div class="chart-ticket">
+        <div class="segment">
+            <span class="kpi-label" style="margin-top:0;">04</span>
+            <h3 style="font-family:'Playfair Display',serif; font-size:22px; font-weight:700; margin-top:4px;">Model Telemetry</h3>
+        </div>
+        <div class="segment-mid" style="padding:16px 24px;">
+            <div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid rgba(0,0,0,0.06);">
+                <span style="font-family:'Space Mono',monospace; font-size:10px; opacity:0.6;">ALGORITHM</span>
+                <span style="font-family:'Space Grotesk',sans-serif; font-size:13px; font-weight:600;">{{ forecast.telemetry.algorithm if (forecast and forecast.telemetry) else 'XGBoost Regressor' }}</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid rgba(0,0,0,0.06);">
+                <span style="font-family:'Space Mono',monospace; font-size:10px; opacity:0.6;">TRAINING SET</span>
+                <span style="font-family:'Space Grotesk',sans-serif; font-size:13px; font-weight:600;">{{ forecast.telemetry.training_set if (forecast and forecast.telemetry) else '652 Daily Records' }}</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid rgba(0,0,0,0.06);">
+                <span style="font-family:'Space Mono',monospace; font-size:10px; opacity:0.6;">ENGINEERED COLS</span>
+                <span style="font-family:'Space Grotesk',sans-serif; font-size:13px; font-weight:600;">{{ forecast.telemetry.n_features if (forecast and forecast.telemetry) else '50 Features' }}</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid rgba(0,0,0,0.06);">
+                <span style="font-family:'Space Mono',monospace; font-size:10px; opacity:0.6;">R-SQUARED SCORE</span>
+                <span style="font-family:'Space Grotesk',sans-serif; font-size:13px; font-weight:600; color:#4a9a78;">{{ forecast.telemetry.r2_score if (forecast and forecast.telemetry) else '84.1% Benchmark' }}</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid rgba(0,0,0,0.06);">
+                <span style="font-family:'Space Mono',monospace; font-size:10px; opacity:0.6;">LAST RE-TRAINED</span>
+                <span style="font-family:'Space Grotesk',sans-serif; font-size:13px; font-weight:600;" id="telemetry-last-retrained">{{ forecast.telemetry.last_retrained if (forecast and forecast.telemetry) else 'Yesterday 12:38 IST' }}</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; padding:10px 0;">
+                <span style="font-family:'Space Mono',monospace; font-size:10px; opacity:0.6;">SCHEDULED UPDATE</span>
+                <span style="font-family:'Space Grotesk',sans-serif; font-size:13px; font-weight:600; color:#4a9a78;">{{ forecast.telemetry.scheduled_update if (forecast and forecast.telemetry) else 'Tomorrow 06:00 IST' }}</span>
+            </div>
+        </div>
+        <div class="segment-bottom" style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-family:'Space Mono',monospace; font-size:9px; text-transform:uppercase; letter-spacing:1px; opacity:0.5;">STATUS: VERIFIED</span>
+            <div class="barcode-deco short"></div>
+        </div>
+    </div>
+
+    <!-- 7-Day Forecast Receipt Table -->
+    <div class="chart-ticket">
+        <div class="segment" style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <span class="kpi-label" style="margin-top:0;">05</span>
+                <h3 style="font-family:'Playfair Display',serif; font-size:24px; font-weight:700; margin-top:4px;">Forecast Ledger</h3>
+            </div>
+            <span class="status-tag normal">7-DAY BREAKDOWN</span>
+        </div>
+        <div class="segment-mid" style="padding:0 24px 20px;">
+            <table class="receipt-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Predicted</th>
+                        <th>Actual</th>
+                        <th>Deviation</th>
+                        <th>Accuracy</th>
+                    </tr>
+                </thead>
+                <tbody id="forecast-tbody">
+                    {% for i in range(forecast.labels|length) %}
+                    {% set pred = forecast.predicted[i] %}
+                    {% set act = forecast.actual[i] %}
+                    {% set error = (pred - act) | abs %}
+                    {% set accuracy = 100 - (error / act * 100) if act > 0 else 100 %}
+                    <tr>
+                        <td style="font-family:'Space Mono',monospace; font-size:11px;">{{ forecast.labels[i] }}</td>
+                        <td style="font-weight:700;">{{ pred | round(1) }} units</td>
+                        <td>{{ act | round(1) }} units</td>
+                        <td style="font-family:'Space Mono',monospace; font-size:11px; {{ 'color:#c04040;' if error > 5 else 'color:#4a9a78;' }}">
+                            {{ '±' }}{{ error | round(1) }}
+                        </td>
+                        <td>
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <span style="font-family:'Space Mono',monospace; font-size:11px; font-weight:700;">{{ accuracy | round(1) }}%</span>
+                                <div class="confidence-bar" style="width:60px; height:4px; margin-top:0;">
+                                    <div class="confidence-fill" style="width:{{ [accuracy, 100]|min }}%; {% if accuracy < 85 %}background:#c08030;{% endif %}"></div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="segment-bottom" style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-family:'Space Mono',monospace; font-size:9px; text-transform:uppercase; letter-spacing:1px; opacity:0.5;">END OF FORECAST RUN</span>
+            <div class="barcode-deco short"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    Chart.defaults.font.family = "'Space Grotesk', sans-serif";
+    Chart.defaults.font.size = 11;
+    Chart.defaults.color = '#888888';
+
+    var tooltipStyle = {
+        backgroundColor: '#1a1a1a',
+        titleFont: { family: "'Space Mono', monospace", size: 10, weight: '700' },
+        bodyFont: { family: "'Space Grotesk', sans-serif", size: 12 },
+        padding: 12,
+        cornerRadius: 12,
+        borderColor: 'rgba(0,0,0,0.1)',
+        borderWidth: 1
+    };
+
+    var productData = {{ forecast.product_profiles | tojson }};
+
+    var labels = ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7'];
+
+    /* ── Forecast Line Chart ── */
+    var ctxForecast = document.getElementById('forecastChart');
+    var forecastChart = null;
+    if (ctxForecast) {
+        var gradActual = ctxForecast.getContext('2d').createLinearGradient(0, 0, 0, 280);
+        gradActual.addColorStop(0, 'rgba(123, 158, 168, 0.2)');
+        gradActual.addColorStop(1, 'rgba(123, 158, 168, 0)');
+
+        forecastChart = new Chart(ctxForecast, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Predicted Demand',
+                        data: productData['all'].predicted,
+                        borderColor: '#6db89a',
+                        borderWidth: 2,
+                        borderDash: [5, 4],
+                        tension: 0.35,
+                        pointBackgroundColor: '#6db89a',
+                        pointRadius: 4,
+                        fill: false
+                    },
+                    {
+                        label: 'Actual Demand',
+                        data: productData['all'].actual,
+                        borderColor: '#7b9ea8',
+                        borderWidth: 2.5,
+                        backgroundColor: gradActual,
+                        tension: 0.35,
+                        pointBackgroundColor: '#7b9ea8',
+                        pointRadius: 4,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: Object.assign({}, tooltipStyle, {
+                        callbacks: {
+                            label: function(ctx) { return ctx.dataset.label + ': ' + ctx.parsed.y + ' units'; }
+                        }
+                    })
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(0,0,0,0.04)', drawBorder: false },
+                        ticks: { callback: function(v) { return v + ' u'; } }
+                    },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    /* ── Features Importance Bar Chart ── */
+    var ctxFeatures = document.getElementById('featuresChart');
+    if (ctxFeatures) {
+        var rawFeatures = {{ forecast.features | tojson }};
+        new Chart(ctxFeatures, {
+            type: 'bar',
+            data: {
+                labels: rawFeatures.labels,
+                datasets: [{
+                    data: rawFeatures.importance,
+                    backgroundColor: '#b8d4c8',
+                    borderRadius: 6,
+                    barPercentage: 0.65
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: Object.assign({}, tooltipStyle, {
+                        callbacks: {
+                            label: function(ctx) { return 'Weight: ' + (ctx.parsed.x * 100).toFixed(1) + '%'; }
+                        }
+                    })
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(0,0,0,0.04)', drawBorder: false },
+                        ticks: { callback: function(v) { return (v * 100) + '%'; } }
+                    },
+                    y: { grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    /* ── Product selector event listener ── */
+    var selector = document.getElementById('product-selector');
+    if (selector) {
+        selector.addEventListener('change', function() {
+            var key = this.value;
+            var data = productData[key] || productData['all'];
+
+            if (forecastChart) {
+                forecastChart.data.datasets[0].data = data.predicted;
+                forecastChart.data.datasets[1].data = data.actual;
+                forecastChart.update('active');
+            }
+
+            document.getElementById('gauge-rmse').textContent = data.accuracy.rmse;
+            document.getElementById('gauge-mae').textContent = data.accuracy.mae;
+            document.getElementById('gauge-mape').textContent = data.accuracy.mape;
+
+            var tbody = document.getElementById('forecast-tbody');
+            if (tbody) {
+                var html = '';
+                for (var i = 0; i < labels.length; i++) {
+                    var pred = data.predicted[i];
+                    var act = data.actual[i];
+                    var error = Math.abs(pred - act);
+                    var accuracy = (100 - (error / act * 100)).toFixed(1);
+                    var errorColor = error > 5 ? '#c04040' : '#4a9a78';
+                    var fillWidth = Math.min(accuracy, 100);
+
+                    html += '<tr>' +
+                        '<td style="font-family:Space Mono,monospace; font-size:11px;">' + labels[i] + '</td>' +
+                        '<td style="font-weight:700;">' + pred + ' units</td>' +
+                        '<td>' + act + ' units</td>' +
+                        '<td style="font-family:Space Mono,monospace; font-size:11px; color:' + errorColor + ';">±' + error.toFixed(1) + '</td>' +
+                        '<td>' +
+                            '<div style="display:flex; align-items:center; gap:8px;">' +
+                                '<span style="font-family:Space Mono,monospace; font-size:11px; font-weight:700;">' + accuracy + '%</span>' +
+                                '<div class="confidence-bar" style="width:60px; height:4px; margin-top:0;">' +
+                                    '<div class="confidence-fill" style="width:' + fillWidth + '%;"></div>' +
+                                '</div>' +
+                            '</div>' +
+                        '</td>' +
+                    '</tr>';
+                }
+                tbody.innerHTML = html;
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

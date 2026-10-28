@@ -1,0 +1,360 @@
+{% extends "base_app.html" %}
+{% block title %}Overview - EcoPrice{% endblock %}
+{% block page_title %}OVERVIEW{% endblock %}
+
+{% block content %}
+<!-- ── Page Header ── -->
+<div class="page-header-receipt">
+    <div class="label-group">
+        <span class="kpi-label" style="margin-top:0;">01</span>
+        <span class="kpi-label" style="margin-top:0;">SYS / OVERVIEW</span>
+    </div>
+    <h1 class="page-heading">Overview</h1>
+    <p class="page-brief">Daily store health at a glance. Revenue, waste metrics, and critical alerts.</p>
+</div>
+
+<!-- ── Alert Strip ── -->
+{% if alerts %}
+<div style="display:flex; flex-direction:column; gap:8px; margin-bottom:24px;">
+    {% for alert in alerts %}
+    <div class="kpi-ticket" style="padding:14px 20px; border-radius:16px;
+        {% if alert.type == 'critical' %}border-left:4px solid #c04040;
+        {% elif alert.type == 'success' %}border-left:4px solid #4a9a78;
+        {% else %}border-left:4px solid var(--color-accent);{% endif %}">
+        <span style="font-family:'Space Grotesk',sans-serif; font-size:13px; font-weight:500;">{{ alert.message }}</span>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- ── KPI Tickets ── -->
+<div class="page-grid cols-4" style="margin-bottom:24px;">
+    <!-- Revenue -->
+    <div class="kpi-ticket accent">
+        <span class="kpi-label">TOTAL REVENUE</span>
+        <div class="kpi-number">Rs.{{ '{:,}'.format(kpis.total_revenue) }}</div>
+        <span class="kpi-change positive">+{{ kpis.revenue_change }}% from last month</span>
+    </div>
+    <!-- Waste Saved -->
+    <div class="kpi-ticket">
+        <span class="kpi-label">WASTE SAVED</span>
+        <div class="kpi-number">Rs.{{ '{:,}'.format(kpis.waste_saved) }}</div>
+        <span class="kpi-change positive">+{{ kpis.waste_saved_change }}% improvement</span>
+    </div>
+    <!-- Spoilage Rate -->
+    <div class="kpi-ticket">
+        <span class="kpi-label">SPOILAGE RATE</span>
+        <div class="kpi-number">{{ kpis.spoilage_rate }}%</div>
+        <span class="kpi-change {{ 'positive' if kpis.spoilage_change < 0 else 'negative' }}">{{ kpis.spoilage_change }}% from last month</span>
+    </div>
+    <!-- Active Discounts -->
+    <div class="kpi-ticket">
+        <span class="kpi-label">ACTIVE DISCOUNTS</span>
+        <div class="kpi-number">{{ kpis.active_discounts }}</div>
+        <span class="kpi-change positive">+{{ kpis.discounts_change }} new today</span>
+    </div>
+</div>
+
+<!-- ── Charts Row ── -->
+<div class="page-grid cols-8-4" style="margin-bottom:24px;">
+    <!-- Revenue Trend Chart Ticket -->
+    <div class="chart-ticket">
+        <div class="segment" style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <span class="kpi-label" style="margin-top:0;">02</span>
+                <h3 style="font-family:'Playfair Display',serif; font-size:24px; font-weight:700; margin-top:4px;">Revenue Trend</h3>
+            </div>
+            <div class="filter-bar" style="margin-bottom:0;">
+                <button class="filter-pill active" data-period="daily">DAILY</button>
+                <button class="filter-pill" data-period="weekly">WEEKLY</button>
+                <button class="filter-pill" data-period="monthly">MONTHLY</button>
+            </div>
+        </div>
+        <div class="segment-mid">
+            <div class="chart-area">
+                <canvas id="revenueChart" style="max-height:260px;"></canvas>
+            </div>
+        </div>
+        <div class="segment-bottom" style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-family:'Space Mono',monospace; font-size:9px; text-transform:uppercase; letter-spacing:1px; opacity:0.5;">WEEKLY PERFORMANCE DATA</span>
+            <div class="barcode-deco short"></div>
+        </div>
+    </div>
+
+    <!-- Category Donut Chart Ticket -->
+    <div class="chart-ticket">
+        <div class="segment">
+            <span class="kpi-label" style="margin-top:0;">03</span>
+            <h3 style="font-family:'Playfair Display',serif; font-size:24px; font-weight:700; margin-top:4px;">Category Split</h3>
+        </div>
+        <div class="segment-mid">
+            <div class="chart-area">
+                <canvas id="categoryChart" style="max-height:200px;"></canvas>
+            </div>
+            <div style="margin-top:16px;">
+                {% if sales and sales.category_labels %}
+                    {% for idx in range(sales.category_labels|length) %}
+                    <div style="display:flex; justify-content:space-between; padding:6px 0; {% if not loop.last %}border-bottom:1px solid rgba(0,0,0,0.06);{% endif %}">
+                        <span style="font-family:'Space Mono',monospace; font-size:10px; display:flex; align-items:center; gap:6px;">
+                            <span style="width:8px;height:8px;border-radius:50%;background:{% if idx==0 %}#b8d4c8{% elif idx==1 %}#c8b8e0{% elif idx==2 %}#f0c4b0{% elif idx==3 %}#a8d0c0{% elif idx==4 %}#e0b8b8{% else %}#b0c8d8{% endif %};display:inline-block;"></span> {{ sales.category_labels[idx] }}
+                        </span>
+                        <span style="font-family:'Space Grotesk',sans-serif; font-size:12px; font-weight:600;">Rs.{{ '{:,}'.format(sales.category_revenue[idx]|int) }}</span>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid rgba(0,0,0,0.06);">
+                        <span style="font-family:'Space Mono',monospace; font-size:10px;">Vegetables</span>
+                        <span style="font-family:'Space Grotesk',sans-serif; font-size:12px; font-weight:600;">Rs.7,61,196</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid rgba(0,0,0,0.06);">
+                        <span style="font-family:'Space Mono',monospace; font-size:10px;">Snacks &amp; Plantains</span>
+                        <span style="font-family:'Space Grotesk',sans-serif; font-size:12px; font-weight:600;">Rs.4,32,794</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; padding:6px 0;">
+                        <span style="font-family:'Space Mono',monospace; font-size:10px;">Fruits</span>
+                        <span style="font-family:'Space Grotesk',sans-serif; font-size:12px; font-weight:600;">Rs.2,59,723</span>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Quick Links + Table Row ── -->
+<div class="page-grid cols-4-8" style="margin-bottom:24px;">
+    <!-- PPO Quick Link -->
+    <div style="display:flex; flex-direction:column; gap:20px;">
+        <div class="kpi-ticket" style="flex:1;">
+            <span class="kpi-label">PPO ENGINE</span>
+            <div class="kpi-number" style="font-size:28px;">{{ pending_suggestions }}</div>
+            <span style="font-family:'Playfair Display',serif; font-style:italic; font-size:12px; opacity:0.7; display:block; margin-top:8px;">Pending discount suggestions awaiting review</span>
+            <a href="/ppo" class="btn-page-action" style="margin-top:16px;">REVIEW SUGGESTIONS</a>
+        </div>
+        <div class="kpi-ticket" style="flex:1; border-left:4px solid #c04040;">
+            <span class="kpi-label">EXPIRY ALERTS</span>
+            <div class="kpi-number" style="font-size:28px; color:#c04040;">{{ critical_count }}</div>
+            <span style="font-family:'Playfair Display',serif; font-style:italic; font-size:12px; opacity:0.7; display:block; margin-top:8px;">Critical items needing immediate attention</span>
+            <a href="/expiry" class="btn-page-action" style="margin-top:16px;">VIEW TRACKER</a>
+        </div>
+    </div>
+
+    <!-- Top Products Table Ticket -->
+    <div class="chart-ticket">
+        <div class="segment" style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <span class="kpi-label" style="margin-top:0;">04</span>
+                <h3 style="font-family:'Playfair Display',serif; font-size:24px; font-weight:700; margin-top:4px;">Top Products</h3>
+            </div>
+            <span class="status-tag normal">THIS WEEK</span>
+        </div>
+        <div class="segment-mid" style="padding:0 24px 20px;">
+            <table class="receipt-table">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Revenue</th>
+                        <th>Units</th>
+                        <th>Trend</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in top_products %}
+                    <tr>
+                        <td>
+                            <span class="product-name">{{ p.name }}</span>
+                            <span class="product-category">{{ p.category }}</span>
+                        </td>
+                        <td style="font-weight:600;">Rs.{{ '{:,}'.format(p.revenue) }}</td>
+                        <td>{{ p.units }}</td>
+                        <td>
+                            <span class="kpi-change {{ 'positive' if p.trend > 0 else 'negative' }}">
+                                {{ '+' if p.trend > 0 else '' }}{{ p.trend }}%
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="segment-bottom" style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-family:'Space Mono',monospace; font-size:9px; text-transform:uppercase; letter-spacing:1px; opacity:0.5;">END OF REGISTRY</span>
+            <div class="barcode-deco short"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Footfall Chart ── -->
+<div class="chart-ticket" style="margin-bottom:24px;">
+    <div class="segment" style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+            <span class="kpi-label" style="margin-top:0;">05</span>
+            <h3 style="font-family:'Playfair Display',serif; font-size:24px; font-weight:700; margin-top:4px;">Hourly Footfall</h3>
+        </div>
+        {% if sales.has_real_timestamps %}
+        <span class="status-tag success" style="font-size:10px; letter-spacing:1px; background:#e0f2e9; color:#2d7a58; border:1px solid #c2e4d4; padding:3px 8px; border-radius:4px; font-family:'Space Mono',monospace;">LIVE POS MEASURED</span>
+        {% else %}
+        <span class="status-tag normal" style="font-size:10px; letter-spacing:1px; background:#f0f2f1; color:#5c6b64; border:1px solid #dcdfdc; padding:3px 8px; border-radius:4px; font-family:'Space Mono',monospace;">ESTIMATED PROFILE</span>
+        {% endif %}
+    </div>
+    <div class="segment-mid">
+        <div class="chart-area">
+            <canvas id="footfallChart" style="max-height:200px;"></canvas>
+        </div>
+    </div>
+    <div class="segment-bottom" style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-family:'Space Mono',monospace; font-size:9px; text-transform:uppercase; letter-spacing:1px; opacity:0.6;">
+            {% if sales.has_real_timestamps %}
+            AVERAGE SHOPPER VISITS PER HOUR (SOURCE: POS LOG TIMESTAMPS)
+            {% else %}
+            RETAIL BELL-CURVE PROFILE (UPGRADE BY UPLOADING POS LOG WITH TIMESTAMPS)
+            {% endif %}
+        </span>
+        <div class="barcode-deco short"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    /* ── Chart.js defaults for receipt theme ── */
+    Chart.defaults.font.family = "'Space Grotesk', sans-serif";
+    Chart.defaults.font.size = 11;
+    Chart.defaults.color = '#888888';
+    Chart.defaults.plugins.legend.display = false;
+    Chart.defaults.elements.point.radius = 0;
+    Chart.defaults.elements.point.hoverRadius = 5;
+
+    var tooltipStyle = {
+        backgroundColor: '#1a1a1a',
+        titleFont: { family: "'Space Mono', monospace", size: 10, weight: '700' },
+        bodyFont: { family: "'Space Grotesk', sans-serif", size: 12 },
+        padding: 12,
+        cornerRadius: 12,
+        borderColor: 'rgba(0,0,0,0.1)',
+        borderWidth: 1
+    };
+
+    /* ── Revenue Trend ── */
+    var revenueCtx = document.getElementById('revenueChart');
+    if (revenueCtx) {
+        var grad = revenueCtx.getContext('2d').createLinearGradient(0, 0, 0, 260);
+        grad.addColorStop(0, 'rgba(184, 212, 200, 0.25)');
+        grad.addColorStop(1, 'rgba(184, 212, 200, 0.02)');
+
+        var salesData = {
+            daily: { labels: {{ sales.daily_labels | tojson }}, data: {{ sales.daily_revenue | tojson }} },
+            weekly: { labels: {{ sales.weekly_labels | tojson }}, data: {{ sales.weekly_revenue | tojson }} },
+            monthly: { labels: {{ sales.monthly_labels | tojson }}, data: {{ sales.monthly_revenue | tojson }} }
+        };
+
+        var revenueChart = new Chart(revenueCtx, {
+            type: 'line',
+            data: {
+                labels: salesData.daily.labels,
+                datasets: [{
+                    data: salesData.daily.data,
+                    borderColor: '#b8d4c8',
+                    borderWidth: 2.5,
+                    backgroundColor: grad,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#b8d4c8'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        grid: { color: 'rgba(0,0,0,0.04)', drawBorder: false },
+                        ticks: { callback: function(v) { return 'Rs.' + (v/1000).toFixed(0) + 'K'; } }
+                    },
+                    x: { grid: { display: false } }
+                },
+                plugins: {
+                    tooltip: Object.assign({}, tooltipStyle, {
+                        callbacks: { label: function(ctx) { return 'Rs.' + ctx.parsed.y.toLocaleString('en-IN'); } }
+                    })
+                }
+            }
+        });
+
+        /* Period toggles */
+        document.querySelectorAll('[data-period]').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('[data-period]').forEach(function(b) { b.classList.remove('active'); });
+                btn.classList.add('active');
+                var p = btn.getAttribute('data-period');
+                revenueChart.data.labels = salesData[p].labels;
+                revenueChart.data.datasets[0].data = salesData[p].data;
+                revenueChart.update('active');
+            });
+        });
+    }
+
+    /* ── Category Donut ── */
+    var categoryCtx = document.getElementById('categoryChart');
+    if (categoryCtx) {
+        new Chart(categoryCtx, {
+            type: 'doughnut',
+            data: {
+                labels: {{ sales.category_labels | tojson }},
+                datasets: [{
+                    data: {{ sales.category_revenue | tojson }},
+                    backgroundColor: ['#b8d4c8', '#c8b8e0', '#f0c4b0', '#d4a0a0'],
+                    borderWidth: 0,
+                    hoverOffset: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '72%',
+                plugins: {
+                    tooltip: Object.assign({}, tooltipStyle, {
+                        callbacks: { label: function(ctx) { return ctx.label + ': Rs.' + ctx.parsed.toLocaleString('en-IN'); } }
+                    })
+                }
+            }
+        });
+    }
+
+    /* ── Footfall Bar ── */
+    var footfallCtx = document.getElementById('footfallChart');
+    if (footfallCtx) {
+        new Chart(footfallCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ sales.hourly_labels | tojson }},
+                datasets: [{
+                    data: {{ sales.hourly_footfall | tojson }},
+                    backgroundColor: function(ctx) {
+                        var v = ctx.parsed ? ctx.parsed.y : 0;
+                        return v > 150 ? '#b8d4c8' : v > 80 ? '#d4e8de' : '#e8f0ec';
+                    },
+                    borderRadius: 8,
+                    borderSkipped: false,
+                    barPercentage: 0.6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)', drawBorder: false }, ticks: { stepSize: 50 } },
+                    x: { grid: { display: false } }
+                },
+                plugins: {
+                    tooltip: Object.assign({}, tooltipStyle, {
+                        callbacks: { label: function(ctx) { return ctx.parsed.y + ' visitors'; } }
+                    })
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,322 @@
+{% extends "base_public.html" %}
+{% block title %}EcoPrice — Dynamic Pricing for Perishables{% endblock %}
+
+{% block content %}
+<div class="landing-page">
+
+    <!-- ── Top Bar ── -->
+    <header class="landing-topbar">
+        <div class="landing-brand">ECOPRICE / V.1.0</div>
+        <nav class="landing-nav">
+            <a href="#about">About</a>
+            <a href="#docs">Documentation</a>
+            <a href="#contact">Contact</a>
+        </nav>
+        <div class="landing-status">
+            <button class="theme-toggle-btn" onclick="toggleTheme()" style="margin-right: 12px;">DARK</button>
+            <div class="status-dot-live"></div>
+            SYS_STATUS: ACTIVE
+        </div>
+    </header>
+
+    <!-- ── Hero Section ── -->
+    <section class="landing-hero">
+        <div class="hero-grid">
+            <!-- Left: Text Content -->
+            <div class="hero-text">
+                <div class="hero-tag">// INITIALIZING DEMAND FORECASTING ENGINE</div>
+
+                <h1 class="hero-heading">
+                    Reducing the <em>waste</em><br>
+                    of perishables.
+                </h1>
+
+                <p class="hero-brief">
+                    A real-time dynamic pricing and spoilage prediction algorithm
+                    for perishable retail. Built with XGBoost demand
+                    forecasting and PPO reinforcement learning.
+                </p>
+
+                <div class="landing-buttons">
+                    <a href="/login" class="btn-landing outline">LOGIN</a>
+                    <a href="/signup" class="btn-landing filled">SIGN UP</a>
+                </div>
+            </div>
+
+            <!-- Right: Hero Image -->
+            <div class="hero-image-area">
+                <img src="{{ url_for('static', filename='images/hero-art.png') }}" alt="Store illustration" class="hero-art-img">
+            </div>
+        </div>
+
+        <div class="landing-stats">
+            <div class="stat-block">
+                <span class="stat-number">86.5%</span>
+                <span class="stat-label">FORECAST ACCURACY</span>
+            </div>
+            <div class="stat-block">
+                <span class="stat-number">85.7%</span>
+                <span class="stat-label">WASTE REDUCTION</span>
+            </div>
+            <div class="stat-block">
+                <span class="stat-number">Rs.11L</span>
+                <span class="stat-label">TOTAL SAVINGS</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── About Section ── -->
+    <section class="landing-section" id="about">
+        <div class="section-header">
+            <span class="section-tag">// 01 ARCHITECTURE & PURPOSE</span>
+            <h2 class="section-heading">Eliminating perishable <em>spoilage</em> in modern retail.</h2>
+            <p class="section-brief">Perishable inventory decay represents a staggering retail loss and landfill burden. EcoPrice dynamically bridges shelf-life expiration with localized consumer demand elasticity.</p>
+        </div>
+
+        <div class="about-grid">
+            <!-- Card 1: The Inefficiency -->
+            <div class="about-card">
+                <div>
+                    <span class="about-card-tag">01.01 // MARKET DEFECT</span>
+                    <h3 class="about-card-title">Rigid Pricing Inefficiency</h3>
+                    <p class="about-card-text">
+                        Traditional grocers rely on manual, delayed markdowns that happen hours before expiration. Uniform price slashes either erode profit margins needlessly or fail to clear stock before safety thresholds expire.
+                    </p>
+                </div>
+                <div class="about-metric-pill">
+                    <span class="about-metric-num">Rs.44K Cr</span>
+                    <span class="about-metric-label">ANNUAL RETAIL PERISHABLE LOSS</span>
+                </div>
+            </div>
+
+            <!-- Card 2: The Intelligence -->
+            <div class="about-card">
+                <div>
+                    <span class="about-card-tag">01.02 // DUAL-TIER ENGINE</span>
+                    <h3 class="about-card-title">Causal Prediction & RL</h3>
+                    <p class="about-card-text">
+                        EcoPrice unites supervised gradient boosting with an autonomous Proximal Policy Optimization (PPO) reinforcement learning agent. The agent dynamically identifies the Pareto frontier between revenue and waste penalties.
+                    </p>
+                </div>
+                <div class="about-metric-pill">
+                    <span class="about-metric-num">85.7%</span>
+                    <span class="about-metric-label">MEASURED SPOILAGE DECELERATION</span>
+                </div>
+            </div>
+
+            <!-- Card 3: The Outcome -->
+            <div class="about-card">
+                <div>
+                    <span class="about-card-tag">01.03 // RETAIL OUTCOME</span>
+                    <h3 class="about-card-title">Automated Margin Protection</h3>
+                    <p class="about-card-text">
+                        Price recommendations are generated based on days-to-expiry, local weather variations, and batch volume surplus. Store managers maintain complete oversight or allow autonomous high-confidence adjustments.
+                    </p>
+                </div>
+                <div class="about-metric-pill">
+                    <span class="about-metric-num">+5.5%</span>
+                    <span class="about-metric-label">NET RECOVERY ON EXPIRING ASSETS</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── Documentation Section (Brief) ── -->
+    <section class="landing-section" id="docs">
+        <div class="section-header">
+            <span class="section-tag">// 02 OPERATIONAL WORKFLOW</span>
+            <h2 class="section-heading">System Architecture in <em>Brief</em>.</h2>
+            <p class="section-brief">How inventory telemetry transforms from physical batch expiration into verified checkout register discount tags across four stages.</p>
+        </div>
+
+        <div class="docs-grid">
+            <!-- Step 1 -->
+            <div class="docs-step-card">
+                <div class="docs-step-num">01</div>
+                <div class="docs-step-tag">INPUT PIPELINE</div>
+                <h4 class="docs-step-title">Data Ingestion</h4>
+                <p class="docs-step-body">
+                    Aggregates point-of-sale logs, inventory batch timestamps, category shelf lives, and meteorological conditions into daily tensors.
+                </p>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="docs-step-card">
+                <div class="docs-step-num">02</div>
+                <div class="docs-step-tag">XGBOOST REGRESSOR</div>
+                <h4 class="docs-step-title">Demand Forecasting</h4>
+                <p class="docs-step-body">
+                    Evaluates 53 engineered features to predict customer purchase volumes per item with 86.5% R² causal accuracy across retail benchmarks.
+                </p>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="docs-step-card">
+                <div class="docs-step-num">03</div>
+                <div class="docs-step-tag">PPO RL AGENT</div>
+                <h4 class="docs-step-title">Discount Optimization</h4>
+                <p class="docs-step-body">
+                    Balances revenue against spoilage penalty &lambda; and markdown penalty &gamma; to calculate the optimal price reduction percentage.
+                </p>
+            </div>
+
+            <!-- Step 4 -->
+            <div class="docs-step-card">
+                <div class="docs-step-num">04</div>
+                <div class="docs-step-tag">REGISTER SYNC</div>
+                <h4 class="docs-step-title">Manager Verification</h4>
+                <p class="docs-step-body">
+                    Discounts populate the manager ledger for one-click verification, automated barcode price tag printing, and POS checkout updates.
+                </p>
+            </div>
+        </div>
+
+        <!-- Tech Spec Strip -->
+        <div class="docs-spec-strip">
+            <div class="docs-spec-item">
+                <span class="docs-spec-label">MODEL ARCHITECTURE</span>
+                <span class="docs-spec-val">XGBoost 3.4 + Stable-Baselines3 PPO</span>
+            </div>
+            <div class="docs-spec-item">
+                <span class="docs-spec-label">TRAINING DATASET</span>
+                <span class="docs-spec-val">Kerala Perishable Retail Telemetry</span>
+            </div>
+            <div class="docs-spec-item">
+                <span class="docs-spec-label">ACTION SPACE</span>
+                <span class="docs-spec-val">Discrete 0% to 30% Dynamic Markdown</span>
+            </div>
+            <div class="docs-spec-item">
+                <span class="docs-spec-label">SYSTEM FRAMEWORK</span>
+                <span class="docs-spec-val">Flask 3.1 &bull; REST API &bull; Chart.js</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── Contact Section (Team Cards with Picture Placeholders & Mail Icons) ── -->
+    <section class="landing-section" id="contact">
+        <div class="section-header">
+            <span class="section-tag">// 03 ENGINEERING TEAM</span>
+            <h2 class="section-heading">Project <em>Collaborators</em>.</h2>
+            <p class="section-brief">Built for perishable retail intelligence and waste reduction. Connect with our team members for technical inquiries, research collaboration, or deployment inquiries.</p>
+        </div>
+
+        <div class="team-grid">
+            <!-- Member 1: Mannem Sri Harshitha -->
+            <div class="team-card">
+                <div class="team-photo-frame">
+                    <img src="" alt="Mannem Sri Harshitha" class="team-photo-img">
+                    <div class="team-photo-placeholder">
+                        <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                        <span>[ PHOTO PLACEHOLDER ]</span>
+                    </div>
+                </div>
+                <div class="team-name-row">
+                    <span class="team-name">Mannem Sri Harshitha</span>
+                    <a href="mailto:vitharshitha@gmail.com" class="team-mail-link" title="Email Mannem Sri Harshitha (vitharshitha@gmail.com)">
+                        <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                    </a>
+                </div>
+                <ul class="team-role-list">
+                    <li>ML &amp; Reinforcement Learning</li>
+                    <li>Full-Stack Architecture &amp; UI</li>
+                    <li>Demand Forecasting Engine</li>
+                    <li>Retail Analytics &amp; Evaluation</li>
+                </ul>
+                <div class="team-dept">Dept of Computer Science &amp; Business Systems</div>
+            </div>
+
+            <!-- Member 2: Manasa Santosh -->
+            <div class="team-card">
+                <div class="team-photo-frame">
+                    <img src="" alt="Manasa Santosh" class="team-photo-img">
+                    <div class="team-photo-placeholder">
+                        <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                        <span>[ PHOTO PLACEHOLDER ]</span>
+                    </div>
+                </div>
+                <div class="team-name-row">
+                    <span class="team-name">Manasa Santosh</span>
+                    <a href="mailto:manasa.23bcb7139@vitapstudent.ac.in" class="team-mail-link" title="Email Manasa Santosh (manasa.23bcb7139@vitapstudent.ac.in)">
+                        <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                    </a>
+                </div>
+                <ul class="team-role-list">
+                    <li>Problem Formulation &amp; R&amp;D Approach</li>
+                    <li>Academic Literature Survey</li>
+                    <li>PPO Training &amp; Calibration</li>
+                </ul>
+                <div class="team-dept">Dept of Computer Science &amp; Business Systems</div>
+            </div>
+
+            <!-- Member 3: Ratakonda Anjana -->
+            <div class="team-card">
+                <div class="team-photo-frame">
+                    <img src="" alt="Ratakonda Anjana" class="team-photo-img">
+                    <div class="team-photo-placeholder">
+                        <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                        <span>[ PHOTO PLACEHOLDER ]</span>
+                    </div>
+                </div>
+                <div class="team-name-row">
+                    <span class="team-name">Ratakonda Anjana</span>
+                    <a href="mailto:anjana.23bcb7032@vitapstudent.ac.in" class="team-mail-link" title="Email Ratakonda Anjana (anjana.23bcb7032@vitapstudent.ac.in)">
+                        <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                    </a>
+                </div>
+                <ul class="team-role-list">
+                    <li>Research Paper Documentation</li>
+                    <li>Problem Survey &amp; Domain Study</li>
+                    <li>Retail Data Collection &amp; Curation</li>
+                </ul>
+                <div class="team-dept">Dept of Computer Science &amp; Business Systems</div>
+            </div>
+
+            <!-- Member 4: Alex Rohan -->
+            <div class="team-card">
+                <div class="team-photo-frame">
+                    <img src="" alt="Alex Rohan" class="team-photo-img">
+                    <div class="team-photo-placeholder">
+                        <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                        <span>[ PHOTO PLACEHOLDER ]</span>
+                    </div>
+                </div>
+                <div class="team-name-row">
+                    <span class="team-name">Alex Rohan</span>
+                    <a href="mailto:rohan.23bcb7255@vitapstudent.ac.in" class="team-mail-link" title="Email Alex Rohan (rohan.23bcb7255@vitapstudent.ac.in)">
+                        <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                    </a>
+                </div>
+                <ul class="team-role-list">
+                    <li>UI / UX System Design</li>
+                    <li>Feature Engineering &amp; Extraction</li>
+                </ul>
+                <div class="team-dept">Dept of Computer Science &amp; Business Systems</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── Landing Page Footer ── -->
+    <footer class="landing-footer">
+        <div class="landing-footer-left">
+            <div class="barcode-deco short"></div>
+            <span class="landing-footer-copy">ECOPRICE // V1.00 &mdash; DYNAMIC PRICING FOR PERISHABLES</span>
+        </div>
+        <div class="landing-footer-right">
+            <a href="#" class="landing-footer-link">&uarr; BACK TO TOP</a>
+            <a href="/login" class="landing-footer-link">MANAGER PORTAL</a>
+        </div>
+    </footer>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var theme = document.documentElement.getAttribute('data-theme') || 'dark';
+        document.querySelectorAll('.theme-toggle-btn').forEach(function(btn) {
+            btn.textContent = theme === 'dark' ? 'DARK' : 'LIGHT';
+        });
+    });
+</script>
+{% endblock %}

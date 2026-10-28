@@ -1,0 +1,66 @@
+{% extends "base_public.html" %}
+{% block title %}Link Expired — EcoPrice{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+
+    <!-- Left: Artistic Panel -->
+    <div class="auth-art">
+        <div class="auth-art-inner">
+            <div class="auth-art-ring"></div>
+        </div>
+    </div>
+
+    <!-- Right: Expired Panel -->
+    <div class="auth-form-panel">
+
+        <!-- Top bar -->
+        <div class="auth-topbar">
+            <span class="auth-topbar-left">SYS.CORE // ON-LINE</span>
+            <div class="auth-topbar-right">
+                <span>V01.00</span>
+                <button class="theme-toggle-btn" onclick="toggleTheme()">DARK</button>
+            </div>
+        </div>
+
+        <!-- Card -->
+        <div class="auth-card">
+            <div class="auth-badge" style="color: #f87171; border-color: rgba(239, 68, 68, 0.4);">ECOPRICE.AUTH // EXPIRED</div>
+            <h1 class="auth-heading">Link Expired</h1>
+            <p class="auth-subtitle">Token validation failed.</p>
+
+            <div style="margin: 20px 0; padding: 14px 16px; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 4px; color: #f87171; font-size: 13px; line-height: 1.5;">
+                {{ error or "This confirmation link is invalid or has expired after 24 hours." }}
+            </div>
+
+            <p style="font-size: 13px; line-height: 1.6; color: var(--color-text-muted); margin-bottom: 24px;">
+                For security reasons, verification tokens are time-limited. You can request a fresh confirmation email by clicking below.
+            </p>
+
+            <a href="/resend-confirmation" class="btn-auth primary" style="display: block; text-align: center; text-decoration: none; padding: 14px 20px;">
+                REQUEST NEW LINK &rarr;
+            </a>
+
+            <div class="auth-divider" style="margin-top: 30px;">
+                <span>NAVIGATION</span>
+            </div>
+
+            <p class="auth-footer">
+                Back to <a href="/login">Login</a> or <a href="/signup">Sign Up</a>
+            </p>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var theme = document.documentElement.getAttribute('data-theme') || 'dark';
+        document.querySelectorAll('.theme-toggle-btn').forEach(function(btn) {
+            btn.textContent = theme === 'dark' ? 'DARK' : 'LIGHT';
+        });
+    });
+</script>
+{% endblock %}

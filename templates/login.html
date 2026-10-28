@@ -1,0 +1,83 @@
+{% extends "base_public.html" %}
+{% block title %}Login — EcoPrice{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+
+    <!-- Left: Artistic Panel (improved with layered gradients) -->
+    <div class="auth-art">
+        <div class="auth-art-inner">
+            <div class="auth-art-ring"></div>
+        </div>
+    </div>
+
+    <!-- Right: Login Form -->
+    <div class="auth-form-panel">
+
+        <!-- Top bar -->
+        <div class="auth-topbar">
+            <span class="auth-topbar-left">SYS.CORE // ON-LINE</span>
+            <div class="auth-topbar-right">
+                <span>V01.00</span>
+                <button class="theme-toggle-btn" onclick="toggleTheme()">DARK</button>
+            </div>
+        </div>
+
+        <!-- Form Card -->
+        <div class="auth-card">
+            <div class="auth-badge">ECOPRICE.AUTH</div>
+            <h1 class="auth-heading">Authenticate</h1>
+            <p class="auth-subtitle">Store manager credential access.</p>
+
+            {% if message %}
+            <div style="margin: 16px 0; padding: 12px 14px; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 4px; color: #34d399; font-family: 'Space Grotesk', sans-serif; font-size: 13px;">
+                {{ message }}
+            </div>
+            {% endif %}
+
+            {% if error %}
+            <div style="margin: 16px 0; padding: 12px 14px; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 4px; color: #f87171; font-family: 'Space Grotesk', sans-serif; font-size: 13px; line-height: 1.5;">
+                {{ error }}
+                {% if unverified_email %}
+                <div style="margin-top: 8px;">
+                    <a href="/resend-confirmation?email={{ unverified_email }}" style="color: #60a5fa; text-decoration: underline; font-weight: 600;">Resend verification email &rarr;</a>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <form action="/login" method="POST">
+                <div class="form-field">
+                    <label for="email">STORE MANAGER EMAIL</label>
+                    <input type="email" id="email" name="email" placeholder="manager@store.com" required autocomplete="email">
+                </div>
+
+                <div class="form-field">
+                    <label for="password">PASSCODE</label>
+                    <input type="password" id="password" name="password" placeholder="••••••••••••" required>
+                </div>
+
+                <button type="submit" class="btn-auth primary">
+                    LOGIN &rarr;
+                </button>
+            </form>
+
+            <p class="auth-footer">
+                Don't have an account? <a href="/signup">Sign up</a>
+            </p>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var theme = document.documentElement.getAttribute('data-theme') || 'dark';
+        document.querySelectorAll('.theme-toggle-btn').forEach(function(btn) {
+            btn.textContent = theme === 'dark' ? 'DARK' : 'LIGHT';
+        });
+    });
+</script>
+{% endblock %}

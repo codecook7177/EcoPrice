@@ -1,0 +1,74 @@
+{% extends "base_public.html" %}
+{% block title %}Account Verified — EcoPrice{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+
+    <!-- Left: Artistic Panel -->
+    <div class="auth-art">
+        <div class="auth-art-inner">
+            <div class="auth-art-ring"></div>
+        </div>
+    </div>
+
+    <!-- Right: Success Panel -->
+    <div class="auth-form-panel">
+
+        <!-- Top bar -->
+        <div class="auth-topbar">
+            <span class="auth-topbar-left">SYS.CORE // ON-LINE</span>
+            <div class="auth-topbar-right">
+                <span>V01.00</span>
+                <button class="theme-toggle-btn" onclick="toggleTheme()">DARK</button>
+            </div>
+        </div>
+
+        <!-- Card -->
+        <div class="auth-card">
+            <div class="auth-badge" style="color: #34d399; border-color: rgba(16, 185, 129, 0.4);">ECOPRICE.AUTH // VERIFIED</div>
+            <h1 class="auth-heading">Verified</h1>
+            <p class="auth-subtitle">Store manager account active.</p>
+
+            <div style="margin: 20px 0; padding: 16px; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 4px;">
+                <div style="font-family: 'Space Mono', monospace; font-size: 10px; color: #34d399; letter-spacing: 0.1em; margin-bottom: 4px;">CONFIRMED IDENTIFIER</div>
+                <div style="font-family: 'Space Mono', monospace; font-size: 13px; color: #ffffff; font-weight: 700; margin-bottom: 10px;">
+                    {{ email }}
+                </div>
+                {% if manager %}
+                <div style="font-size: 12px; color: var(--color-text-muted);">
+                    {{ manager.name }} &bull; {{ manager.designation }} &bull; {{ manager.location }}
+                </div>
+                {% endif %}
+            </div>
+
+            <p style="font-size: 13px; line-height: 1.6; color: var(--color-text-muted); margin-bottom: 24px;">
+                Your email identity has been authenticated. You now have full access to the AI demand forecasting engine, perishable shelf-life tracking, and PPO markdown tools.
+            </p>
+
+            <a href="/dashboard" class="btn-auth primary" style="display: block; text-align: center; text-decoration: none; padding: 14px 20px;">
+                ENTER DASHBOARD &rarr;
+            </a>
+
+            <div class="auth-divider" style="margin-top: 30px;">
+                <span>STATUS</span>
+            </div>
+
+            <p class="auth-footer">
+                Need to switch accounts? <a href="/logout">Sign out</a>
+            </p>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var theme = document.documentElement.getAttribute('data-theme') || 'dark';
+        document.querySelectorAll('.theme-toggle-btn').forEach(function(btn) {
+            btn.textContent = theme === 'dark' ? 'DARK' : 'LIGHT';
+        });
+    });
+</script>
+{% endblock %}
