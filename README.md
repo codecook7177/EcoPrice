@@ -7,11 +7,10 @@
 [![Flask](https://img.shields.io/badge/Framework-Flask%203.0-000000?style=for-the-badge&logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
 [![XGBoost](https://img.shields.io/badge/ML-XGBoost-EB8E24?style=for-the-badge&logo=xgboost&logoColor=white)](https://xgboost.readthedocs.io/)
 [![RL](https://img.shields.io/badge/Reinforcement%20Learning-PPO%20%7C%20Gymnasium-orange?style=for-the-badge)](https://gymnasium.farama.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
 <br/>
 
-**A multi-objective reinforcement learning and supervised demand forecasting platform designed to minimize physical grocery shrinkage, optimize perishable inventory markdowns, and protect store margins.**
+**A reinforcement learning and supervised demand forecasting platform designed to minimize perishable wastage and maximize retail profits.**
 
 [Explore Features](#key-features) &bull; [Architecture](#system-architecture) &bull; [Empirical Results](#empirical-results) &bull; [Quick Start](#getting-started) &bull; [Thesis Documentation](#documentation)
 
@@ -19,11 +18,11 @@
 
 ---
 
-## Executive Summary
+## About
 
-Perishable grocery departments (dairy, fresh produce, meat, poultry, seafood, and bakery) operate under razor-thin margins and stringent shelf-life limits. Traditional retail supermarkets apply static, uniform pricing until goods reach their terminal sell-by dates, causing steep markdowns at the last minute or complete inventory write-offs.
+Perishable grocery departments (dairy, fresh produce, meat, poultry, seafood, and bakery) operate under very thin margins and short shelf-life limits. Traditional retail supermarkets apply static pricing until goods reach their terminal sell-by dates, causing wastage of goods and losses over unsold inventory.
 
-**EcoPrice** replaces static pricing with a closed-loop, data-driven pricing intelligence engine. It couples:
+**EcoPrice** replaces static pricing with a data-driven pricing intelligence engine. It couples:
 1. **Supervised Demand Forecasting (XGBoost):** Anticipates daily item demand using 50 engineered features across lag sales, rolling statistical trends, calendar periodicity, upcoming regional festivals, and ambient meteorological conditions.
 2. **Arrhenius Spoilage Decay Modeling:** Adjusts real-time product deterioration speed according to ambient temperature and relative humidity across Indian agro-climatic zones.
 3. **Multi-Objective Reinforcement Learning (PPO):** Balances perishable inventory salvage value against waste write-off penalties ($\lambda = 0.75$) and brand discount penalties ($\gamma = 0.35$) inside a custom Gymnasium environment.
@@ -31,19 +30,19 @@ Perishable grocery departments (dairy, fresh produce, meat, poultry, seafood, an
 
 ---
 
-## User Interface & System Walkthrough
+## User Interface
 
 <div align="center">
 
 ### Store Management Dashboard
-![EcoPrice Dashboard](documentation/thesis_screens/screen_03_dashboard.png)
+![EcoPrice Dashboard]
 *Executive overview displaying real-time shrinkage rate, estimated spoilage loss, revenue saved, active perishable batches, and quick action controls.*
 
 </div>
 
 ### Interface Capabilities
 
-| Screen | View | Description |
+| Screen | Description |
 | :--- | :--- | :--- |
 | **Expiry Tracker** | ![Expiry Tracker](documentation/thesis_screens/screen_04_expiry_tracker.png) | Color-coded inventory shelf-life ledger with visual urgency alerts (Green: $\ge$ 4 days, Amber: 2–3 days, Red: 1 day). |
 | **Dynamic Pricing Engine** | ![Dynamic Pricing](documentation/thesis_screens/screen_05_dynamic_pricing.png) | PPO algorithmic markdown approval panel showing recommended discounts (0%–30%), base retail prices, and sales lift. |
