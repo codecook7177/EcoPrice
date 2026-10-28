@@ -213,19 +213,6 @@ Open **`http://127.0.0.1:5000`** in your browser.
 
 ---
 
-## Documentation
-
-Full academic reports and review guides are provided inside the `documentation/` folder:
-- **Comprehensive Project Thesis:** [EcoPrice_Capstone_Project_Thesis.docx](EcoPrice_Capstone_Project_Thesis.docx) (58 Pages, 12 Figures, 10 Tables)
-- **Phase Reports:**
-  - [Phase 1: Dataset Preprocessing & Cleaning](documentation/Phase_1_Preprocessing.docx)
-  - [Phase 2: 50-Feature Engineering Specification](documentation/Phase_2_Feature_Extraction.docx)
-  - [Phase 3: Supervised XGBoost Training](documentation/Phase_3_XGBoost_Training.docx)
-  - [Phase 4: Gymnasium & PPO Reinforcement Learning](documentation/Phase_4_PPO_Training.docx)
-- **Viva & Defense Guide:** [EcoPrice_Master_Review_Preparation_Guide.docx](documentation/EcoPrice_Master_Review_Preparation_Guide.docx)
-
----
-
 ## License
 
 This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
