@@ -30,39 +30,6 @@ Perishable grocery departments (dairy, fresh produce, meat, poultry, seafood, an
 
 ---
 
-## User Interface
-
-<div align="center">
-
-### Store Management Dashboard
-![EcoPrice Dashboard]
-*Executive overview displaying real-time shrinkage rate, estimated spoilage loss, revenue saved, active perishable batches, and quick action controls.*
-
-</div>
-
-### Interface Capabilities
-
-| Screen | Description |
-| :--- | :--- | :--- |
-| **Expiry Tracker** | ![Expiry Tracker](documentation/thesis_screens/screen_04_expiry_tracker.png) | Color-coded inventory shelf-life ledger with visual urgency alerts (Green: $\ge$ 4 days, Amber: 2–3 days, Red: 1 day). |
-| **Dynamic Pricing Engine** | ![Dynamic Pricing](documentation/thesis_screens/screen_05_dynamic_pricing.png) | PPO algorithmic markdown approval panel showing recommended discounts (0%–30%), base retail prices, and sales lift. |
-| **Demand Forecasting** | ![Demand Forecast](documentation/thesis_screens/screen_06_demand_forecast.png) | Departmental daily sales predictions compared against 7-day historical moving averages with weather impact overlays. |
-| **Store Settings & GPS** | ![Settings](documentation/thesis_screens/screen_08_settings_location.png) | GPS auto-detection of store state/district for climate syncing, manager profile avatar uploads (<3MB), and algorithm weights. |
-
----
-
-## Key Features
-
-- **50-Feature Chronological ML Pipeline:** Extracts temporal cycles, rolling window statistical aggregations (7d and 14d mean, standard deviation, min, max), calendar lag intervals, holiday indicators, and climate interaction metrics.
-- **Microclimate-Aware Spoilage Acceleration:** Uses Arrhenius-derived kinetic multipliers based on local temperature ($T$) and humidity ($RH$) to calibrate daily shelf decay.
-- **PPO Reinforcement Policy:** 200,000 timestep training in a Gymnasium retail simulation environment delivering an **85.7% reduction in perishable spoilage waste**.
-- **Human-in-the-Loop Governance:** Algorithmic suggestions require store manager verification with options for individual approval, bulk execution, manual adjustment, or instant undo.
-- **Dynamic Catalog Management:** Real-time intake for incoming delivery batches with automated perishable classification heuristics and live inventory reconciliation.
-- **Factory Baseline Reset:** One-click rollback restores inventory counts, datasets, and feature matrices to pristine factory baseline records.
-- **Audit Logging & CSV Export:** Download complete historical logs of manager pricing decisions for store accounting audits.
-
----
-
 ## System Architecture
 
 ```
@@ -135,60 +102,58 @@ The demand forecasting and reinforcement learning architectures were evaluated u
 
 ```text
 ecoprice/
-├── app.py                                # Primary Flask server and API router
-├── start_live.py                         # One-click launcher with Cloudflare Tunnel
-├── start_ecoprice.bat                    # Windows batch launcher
-├── requirements.txt                      # Production dependencies
-├── Dockerfile                            # Docker container configuration
-├── Procfile / render.yaml                # Cloud hosting specifications
-├── EcoPrice_Capstone_Project_Thesis.docx # University Capstone Thesis (58 pages)
+├── app.py                                
+├── start_live.py                         
+├── start_ecoprice.bat                    
+├── requirements.txt                      
+├── Dockerfile                            
+├── Procfile / render.yaml                
 │
-├── src/                                  # Core business and ML services
-│   ├── model_service.py                  # Catalog coordinator and model loader
-│   ├── perishable_classifier.py          # Perishable gatekeeper heuristics
-│   ├── weather_service.py                # Meteorological APIs and Arrhenius index
-│   ├── preprocess.py                     # Raw dataset sanitization pipeline
-│   ├── feature_extraction.py             # 50-feature chronological pipeline
-│   └── email_service.py                  # Transactional notification service
+├── src/                                  
+│   ├── model_service.py                  
+│   ├── perishable_classifier.py          
+│   ├── weather_service.py               
+│   ├── preprocess.py                    
+│   ├── feature_extraction.py             
+│   └── email_service.py                  
 │
-├── models/                               # Model code and weights
-│   ├── environment.py                    # Custom Gymnasium retail environment
-│   ├── ppo_agent.py                      # PPO training loop and agent checkpointing
-│   ├── xgboost_model.py                  # Demand forecasting training pipeline
-│   ├── xgboost_causal.py                 # Feature ablation model
-│   └── saved/                            # Model binary weights and evaluation plots
-│       ├── xgboost_demand_kerala.joblib  # Trained XGBoost forecaster
-│       ├── ppo_discount_kerala.zip       # Trained PPO actor-critic policy
-│       └── plots/                        # Training curves and feature importance plots
+├── models/                               
+│   ├── environment.py                    
+│   ├── ppo_agent.py                      
+│   ├── xgboost_model.py                  
+│   ├── xgboost_causal.py                 
+│   └── saved/                            
+│       ├── xgboost_demand_kerala.joblib  
+│       ├── ppo_discount_kerala.zip       
+│       └── plots/                        
 │
-├── templates/                            # Frontend Jinja2 HTML templates
-│   ├── base_app.html                     # Main application layout with top navigation
-│   ├── dashboard.html                    # Store executive dashboard
-│   ├── expiry.html                       # Perishable expiry tracker ledger
-│   ├── ppo.html                          # Algorithmic pricing approval terminal
-│   ├── forecast.html                     # Demand forecasting curves and analytics
-│   ├── sales.html                        # POS daily sales register
-│   └── settings.html                     # Store location, GPS, avatar, and tuning
+├── templates/                           
+│   ├── base_app.html                     
+│   ├── dashboard.html                    
+│   ├── expiry.html                       
+│   ├── ppo.html                          
+│   ├── forecast.html                     
+│   ├── sales.html                        
+│   └── settings.html                     
 │
-├── static/                               # Static web assets
-│   ├── css/                              # public.css, pages.css, style.css
-│   ├── js/                               # main.js, ambient.js
-│   ├── images/                           # hero-art.png
-│   └── audio/                            # ambient.mp3 (background grocery audio)
+├── static/                               
+│   ├── css/                              
+│   ├── js/                               
+│   ├── images/                           
+│   └── audio/                            
 │
-├── data/                                 # Datasets and schemas
-│   ├── sales_register_data_golden_backup.csv # Pristine factory sales records
-│   ├── kerala_clean.csv                  # Preprocessed grocery transactions
-│   ├── inventory_state.json              # Active stock counts across 38 SKUs
-│   └── settings.json                     # Store parameters and shelf lives
+├── data/                                 
+│   ├── sales_register_data_golden_backup.csv 
+│   ├── kerala_clean.csv                  
+│   ├── inventory_state.json              
+│   └── settings.json                     
 │
-└── documentation/                        # Project documentation
-    ├── Phase_1_Preprocessing.docx        # Phase 1 documentation
-    ├── Phase_2_Feature_Extraction.docx   # Phase 2 documentation
-    ├── Phase_3_XGBoost_Training.docx     # Phase 3 documentation
-    ├── Phase_4_PPO_Training.docx         # Phase 4 documentation
-    ├── EcoPrice_Master_Review_Preparation_Guide.docx # Viva preparation guide
-    └── thesis_screens/                   # 8 high-resolution UI walkthrough images
+└── documentation/                        
+    ├── Phase_1_Preprocessing.docx        
+    ├── Phase_2_Feature_Extraction.docx   
+    ├── Phase_3_XGBoost_Training.docx     
+    ├── Phase_4_PPO_Training.docx         
+    
 ```
 
 ---
@@ -229,11 +194,6 @@ python app.py
 ```
 Open **`http://127.0.0.1:5000`** in your browser.
 
-#### One-Click Live Cloud Demo (with Cloudflare Tunnel):
-```bash
-python start_live.py
-```
-This automatically initiates the local Flask server, resolves local Wi-Fi LAN access, and establishes a secure public HTTPS Cloudflare tunnel for external device access.
 
 ---
 
