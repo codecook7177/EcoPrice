@@ -121,11 +121,7 @@ ecoprice/
 │   ├── environment.py                    
 │   ├── ppo_agent.py                      
 │   ├── xgboost_model.py                  
-│   ├── xgboost_causal.py                 
-│   └── saved/                            
-│       ├── xgboost_demand_kerala.joblib  
-│       ├── ppo_discount_kerala.zip       
-│       └── plots/                        
+│   ├── xgboost_causal.py                                       
 │
 ├── templates/                           
 │   ├── base_app.html                     
