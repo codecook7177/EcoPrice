@@ -12,7 +12,7 @@
 
 **A reinforcement learning and supervised demand forecasting platform designed to minimize perishable wastage and maximize retail profits.**
 
-[Architecture](#system-architecture) &bull; [Empirical Results](#empirical-results) &bull; [Quick Start](#getting-started) &bull;
+[Architecture](#system-architecture) &bull; [Empirical Results](#empirical-results) &bull; [Quick Start](#getting-started)
 
 </div>
 
