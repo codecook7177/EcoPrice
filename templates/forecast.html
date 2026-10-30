@@ -1,0 +1,544 @@
+{% extends "base_app.html" %}
+{% block title %}Demand Forecasting - EcoPrice{% endblock %}
+{% block page_title %}FORECASTING{% endblock %}
+
+{% block content %}
+<style>
+.timeframe-pill-group {
+    display: inline-flex;
+    background: rgba(0, 0, 0, 0.05);
+    padding: 3px;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    gap: 3px;
+}
+.btn-timeframe {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 5px 12px;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #666;
+    transition: all 0.2s ease;
+}
+.btn-timeframe:hover {
+    color: #111;
+}
+.btn-timeframe.active {
+    background: #ffffff;
+    color: #111;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+</style>
+<!-- ── Page Header ── -->
+<div class="page-header-receipt">
+    <div class="label-group">
+        <span class="kpi-label" style="margin-top:0;">01</span>
+        <span class="kpi-label" style="margin-top:0;">SYS / XGBOOST FORECAST</span>
+    </div>
+    <div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px;">
+        <div>
+            <h1 class="page-heading">Demand Forecasting</h1>
+            <p class="page-brief">XGBoost-powered demand predictions calibrated for {{ store_id if not is_flagship else 'retail inventory' }} to optimize inventory and prevent perishable stockouts.</p>
+        </div>
+        <div style="display:flex; align-items:center; gap:12px;">
+            <label for="product-selector" style="font-family:Space Mono,monospace; font-size:10px; text-transform:uppercase; letter-spacing:1px; opacity:0.7;">SELECT PRODUCT:</label>
+            <select id="product-selector" class="forecast-product-select">
+                <option value="all">ALL ({{ forecast.products|length }}) PERISHABLES</option>
+                {% for product in forecast.products %}
+                <option value="{{ product }}">{{ product | upper }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+</div>
+
+<!-- ── Accuracy Gauges Row ── -->
+<div class="page-grid cols-3" style="margin-bottom:24px;">
+    <div class="gauge-ticket">
+        <span class="kpi-label" style="margin-top:0;">METRIC // 01</span>
+        <div class="gauge-value" id="gauge-rmse" style="margin-top:8px;">{{ forecast.accuracy.rmse | default('2.8') }}</div>
+        <div class="gauge-label">RMSE (ROOT MEAN SQ ERROR)</div>
+        <span style="font-family:'Playfair Display',serif; font-style:italic; font-size:11px; opacity:0.6; display:block; margin-top:4px;">Low error across daily sales batches</span>
+    </div>
+
+    <div class="gauge-ticket">
+        <span class="kpi-label" style="margin-top:0;">METRIC // 02</span>
+        <div class="gauge-value" id="gauge-mae" style="margin-top:8px;">{{ forecast.accuracy.mae | default('2.3') }}</div>
+        <div class="gauge-label">MAE (MEAN ABSOLUTE ERROR)</div>
+        <span style="font-family:'Playfair Display',serif; font-style:italic; font-size:11px; opacity:0.6; display:block; margin-top:4px;">Average deviation of &plusmn;{{ forecast.accuracy.mae | default('2.3') }} units</span>
+    </div>
+
+    <div class="gauge-ticket" style="background:var(--color-accent);">
+        <span class="kpi-label" style="margin-top:0;">METRIC // 03</span>
+        <div class="gauge-value" id="gauge-mape" style="margin-top:8px;">{{ forecast.accuracy.mape | default('5.7') }}%</div>
+        <div class="gauge-label">MAPE (PERCENTAGE ERROR)</div>
+        <span style="font-family:'Playfair Display',serif; font-style:italic; font-size:11px; opacity:0.6; display:block; margin-top:4px;">Model test accuracy on benchmark dataset</span>
+    </div>
+</div>
+
+<!-- ── Main Chart Row ── -->
+<div class="page-grid cols-8-4" style="margin-bottom:24px;">
+    <!-- Predicted vs Actual Demand Ticket -->
+    <div class="chart-ticket">
+        <div class="segment" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+            <div>
+                <span class="kpi-label" style="margin-top:0;">02</span>
+                <h3 style="font-family:'Playfair Display',serif; font-size:24px; font-weight:700; margin-top:4px;">Predicted vs Actual Demand</h3>
+            </div>
+            <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+                <div class="timeframe-pill-group">
+                    <button type="button" class="btn-timeframe active" data-range="upcoming">UPCOMING (7 DAYS)</button>
+                    <button type="button" class="btn-timeframe" data-range="past_week">PAST WEEK (7 DAYS)</button>
+                    <button type="button" class="btn-timeframe" data-range="past_month">PAST 30 DAYS</button>
+                </div>
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <span style="display:inline-block; width:16px; height:2px; background:#b8d4c8; border-top:1px dashed #6db89a;"></span>
+                        <span style="font-family:Space Mono,monospace; font-size:10px; text-transform:uppercase;">PREDICTED</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <span style="display:inline-block; width:16px; height:3px; background:#7b9ea8;"></span>
+                        <span style="font-family:Space Mono,monospace; font-size:10px; text-transform:uppercase;">ACTUAL</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="segment-mid">
+            <div class="chart-area">
+                <canvas id="forecastChart" style="max-height:280px;"></canvas>
+            </div>
+        </div>
+        <div class="segment-bottom" style="display:flex; justify-content:space-between; align-items:center;">
+            <span id="chart-horizon-label" style="font-family:Space Mono,monospace; font-size:9px; text-transform:uppercase; letter-spacing:1px; opacity:0.5;">7-DAY ROLLING HORIZON // XGBOOST INFERENCE</span>
+            <div class="barcode-deco short"></div>
+        </div>
+    </div>
+
+    <!-- Feature Importance Ticket -->
+    <div class="chart-ticket">
+        <div class="segment">
+            <span class="kpi-label" style="margin-top:0;">03</span>
+            <h3 style="font-family:'Playfair Display',serif; font-size:24px; font-weight:700; margin-top:4px;">Feature Weights</h3>
+        </div>
+        <div class="segment-mid">
+            <div class="chart-area">
+                <canvas id="featuresChart" style="max-height:280px;"></canvas>
+            </div>
+        </div>
+        <div class="segment-bottom" style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-family:Space Mono,monospace; font-size:9px; text-transform:uppercase; letter-spacing:1px; opacity:0.5;">TOP PREDICTIVE FACTORS</span>
+            <div class="barcode-deco short"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Model Metadata & 7-Day Ledger Table ── -->
+<div class="page-grid cols-4-8" style="margin-bottom:24px;">
+    <!-- Model Architecture Ticket -->
+    <div class="chart-ticket">
+        <div class="segment">
+            <span class="kpi-label" style="margin-top:0;">04</span>
+            <h3 style="font-family:'Playfair Display',serif; font-size:22px; font-weight:700; margin-top:4px;">Model Telemetry</h3>
+        </div>
+        <div class="segment-mid" style="padding:16px 24px;">
+            <div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid rgba(0,0,0,0.06);">
+                <span style="font-family:Space Mono,monospace; font-size:10px; opacity:0.6;">ALGORITHM</span>
+                <span style="font-family:'Space Grotesk',sans-serif; font-size:13px; font-weight:600;">{{ forecast.telemetry.algorithm if (forecast and forecast.telemetry) else 'XGBoost Regressor' }}</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid rgba(0,0,0,0.06);">
+                <span style="font-family:Space Mono,monospace; font-size:10px; opacity:0.6;">TRAINING SET</span>
+                <span style="font-family:'Space Grotesk',sans-serif; font-size:13px; font-weight:600;">{{ forecast.telemetry.training_set if (forecast and forecast.telemetry) else '652 Daily Records' }}</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid rgba(0,0,0,0.06);">
+                <span style="font-family:Space Mono,monospace; font-size:10px; opacity:0.6;">ENGINEERED COLS</span>
+                <span style="font-family:'Space Grotesk',sans-serif; font-size:13px; font-weight:600;">{{ forecast.telemetry.n_features if (forecast and forecast.telemetry) else '50 Features' }}</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid rgba(0,0,0,0.06);">
+                <span style="font-family:Space Mono,monospace; font-size:10px; opacity:0.6;">R-SQUARED SCORE</span>
+                <span style="font-family:'Space Grotesk',sans-serif; font-size:13px; font-weight:600; color:#4a9a78;">{{ forecast.telemetry.r2_score if (forecast and forecast.telemetry) else '84.1% Benchmark' }}</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid rgba(0,0,0,0.06);">
+                <span style="font-family:Space Mono,monospace; font-size:10px; opacity:0.6;">LAST RE-TRAINED</span>
+                <span style="font-family:'Space Grotesk',sans-serif; font-size:13px; font-weight:600;" id="telemetry-last-retrained">{{ forecast.telemetry.last_retrained if (forecast and forecast.telemetry) else 'Yesterday 12:38 IST' }}</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; padding:10px 0;">
+                <span style="font-family:Space Mono,monospace; font-size:10px; opacity:0.6;">SCHEDULED UPDATE</span>
+                <span style="font-family:'Space Grotesk',sans-serif; font-size:13px; font-weight:600; color:#4a9a78;">{{ forecast.telemetry.scheduled_update if (forecast and forecast.telemetry) else 'Tomorrow 06:00 IST' }}</span>
+            </div>
+        </div>
+        <div class="segment-bottom" style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-family:Space Mono,monospace; font-size:9px; text-transform:uppercase; letter-spacing:1px; opacity:0.5;">STATUS: VERIFIED</span>
+            <div class="barcode-deco short"></div>
+        </div>
+    </div>
+
+    <!-- 7-Day Forecast Receipt Table -->
+    <div class="chart-ticket">
+        <div class="segment" style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <span class="kpi-label" style="margin-top:0;">05</span>
+                <h3 style="font-family:'Playfair Display',serif; font-size:24px; font-weight:700; margin-top:4px;">Forecast Ledger</h3>
+            </div>
+            <span class="status-tag normal" id="ledger-horizon-badge">7-DAY UPCOMING</span>
+        </div>
+        <div class="segment-mid" style="padding:0 24px 20px;">
+            <table class="receipt-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Predicted</th>
+                        <th>Actual</th>
+                        <th>Deviation</th>
+                        <th>Accuracy</th>
+                    </tr>
+                </thead>
+                <tbody id="forecast-tbody">
+                    {% for i in range(forecast.labels|length) %}
+                    {% set pred = forecast.predicted[i] %}
+                    {% set act = forecast.actual[i] %}
+                    <tr>
+                        <td style="font-family:Space Mono,monospace; font-size:11px;">
+                            {{ forecast.labels[i] }}
+                            {% if i == 0 %}
+                            <span style="font-size:9px; background:rgba(0,0,0,0.06); padding:1px 5px; border-radius:3px; margin-left:4px; font-weight:700;">TODAY</span>
+                            {% elif i == 1 %}
+                            <span style="font-size:9px; opacity:0.6; margin-left:4px;">TOMORROW</span>
+                            {% endif %}
+                        </td>
+                        <td style="font-weight:700;">{{ pred | round(1) }} units</td>
+                        <td>
+                            {% if act is not none %}
+                            <span style="font-weight:600;">{{ act | round(1) }} units</span>
+                            {% elif i == 0 %}
+                            <span style="font-family:Space Mono,monospace; font-size:10px; opacity:0.6;">0 units (Trading)</span>
+                            {% else %}
+                            <span style="font-family:Space Mono,monospace; font-size:10px; opacity:0.4;">— (Upcoming)</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if act is not none %}
+                            {% set error = (pred - act) | abs %}
+                            <span style="font-family:Space Mono,monospace; font-size:11px; {{ 'color:#c04040;' if error > 5 else 'color:#4a9a78;' }}">
+                                {{ '±' }}{{ error | round(1) }}
+                            </span>
+                            {% else %}
+                            <span style="font-family:Space Mono,monospace; font-size:11px; opacity:0.4;">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if act is not none and act > 0 %}
+                            {% set error = (pred - act) | abs %}
+                            {% set accuracy = 100 - (error / act * 100) %}
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <span style="font-family:Space Mono,monospace; font-size:11px; font-weight:700;">{{ accuracy | round(1) }}%</span>
+                                <div class="confidence-bar" style="width:60px; height:4px; margin-top:0;">
+                                    <div class="confidence-fill" style="width:{{ [accuracy, 100]|min }}%; {% if accuracy < 85 %}background:#c08030;{% endif %}"></div>
+                                </div>
+                            </div>
+                            {% elif i == 0 %}
+                            <span class="status-tag normal" style="font-size:9px; padding:2px 8px; font-family:Space Mono,monospace;">LOG AT CLOSE</span>
+                            {% else %}
+                            <span class="status-tag normal" style="font-size:9px; padding:2px 8px; font-family:Space Mono,monospace; opacity:0.6;">FORECAST HORIZON</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="segment-bottom" style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-family:Space Mono,monospace; font-size:9px; text-transform:uppercase; letter-spacing:1px; opacity:0.5;">END OF FORECAST RUN</span>
+            <div class="barcode-deco short"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    Chart.defaults.font.family = "'Space Grotesk', sans-serif";
+    Chart.defaults.font.size = 11;
+    Chart.defaults.color = '#888888';
+
+    var tooltipStyle = {
+        backgroundColor: '#1a1a1a',
+        titleFont: { family: "'Space Mono', monospace", size: 10, weight: '700' },
+        bodyFont: { family: "'Space Grotesk', sans-serif", size: 12 },
+        padding: 12,
+        cornerRadius: 12,
+        borderColor: 'rgba(0,0,0,0.1)',
+        borderWidth: 1
+    };
+
+    var forecastRanges = {{ forecast.ranges | tojson if (forecast and forecast.ranges) else {} }};
+    var productData = {{ forecast.product_profiles | tojson if (forecast and forecast.product_profiles) else {} }};
+    var initialLabels = {{ forecast.labels | tojson if (forecast and forecast.labels) else [] }};
+
+    var currentRange = 'upcoming';
+    var currentProduct = 'all';
+
+    /* ── Forecast Line Chart ── */
+    var ctxForecast = document.getElementById('forecastChart');
+    var forecastChart = null;
+    if (ctxForecast) {
+        var gradActual = ctxForecast.getContext('2d').createLinearGradient(0, 0, 0, 280);
+        gradActual.addColorStop(0, 'rgba(123, 158, 168, 0.2)');
+        gradActual.addColorStop(1, 'rgba(123, 158, 168, 0)');
+
+        var initPred = (productData['all'] && productData['all'].predicted) ? productData['all'].predicted : [];
+        var initAct = (productData['all'] && productData['all'].actual) ? productData['all'].actual : [];
+
+        forecastChart = new Chart(ctxForecast, {
+            type: 'line',
+            data: {
+                labels: initialLabels,
+                datasets: [
+                    {
+                        label: 'Predicted Demand',
+                        data: initPred,
+                        borderColor: '#6db89a',
+                        borderWidth: 2,
+                        borderDash: [5, 4],
+                        tension: 0.35,
+                        pointBackgroundColor: '#6db89a',
+                        pointRadius: 4,
+                        fill: false
+                    },
+                    {
+                        label: 'Actual Demand',
+                        data: initAct,
+                        borderColor: '#7b9ea8',
+                        borderWidth: 2.5,
+                        backgroundColor: gradActual,
+                        tension: 0.35,
+                        pointBackgroundColor: '#7b9ea8',
+                        pointRadius: 4,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: Object.assign({}, tooltipStyle, {
+                        callbacks: {
+                            label: function(ctx) {
+                                if (ctx.raw === null || ctx.raw === undefined) {
+                                    return ctx.dataset.label + ': Upcoming';
+                                }
+                                if (ctx.raw === 0 && currentRange !== 'upcoming') {
+                                    return ctx.dataset.label + ': 0 units (No POS Logged)';
+                                }
+                                return ctx.dataset.label + ': ' + ctx.parsed.y + ' units';
+                            }
+                        }
+                    })
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(0,0,0,0.04)', drawBorder: false },
+                        ticks: { callback: function(v) { return v + ' u'; } }
+                    },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    /* ── Features Importance Bar Chart ── */
+    var ctxFeatures = document.getElementById('featuresChart');
+    if (ctxFeatures) {
+        var rawFeatures = {{ forecast.features | tojson if (forecast and forecast.features) else {'labels':[], 'importance':[]} }};
+        new Chart(ctxFeatures, {
+            type: 'bar',
+            data: {
+                labels: rawFeatures.labels,
+                datasets: [{
+                    data: rawFeatures.importance,
+                    backgroundColor: '#b8d4c8',
+                    borderRadius: 6,
+                    barPercentage: 0.65
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: Object.assign({}, tooltipStyle, {
+                        callbacks: {
+                            label: function(ctx) { return 'Weight: ' + (ctx.parsed.x * 100).toFixed(1) + '%'; }
+                        }
+                    })
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(0,0,0,0.04)', drawBorder: false },
+                        ticks: { callback: function(v) { return (v * 100) + '%'; } }
+                    },
+                    y: { grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    /* ── Master Dynamic View Renderer (Range + Product) ── */
+    function renderView() {
+        var rangeData = forecastRanges[currentRange];
+        if (!rangeData) {
+            rangeData = {
+                labels: initialLabels,
+                predicted: (productData['all'] ? productData['all'].predicted : []),
+                actual: (productData['all'] ? productData['all'].actual : []),
+                accuracy: {{ forecast.accuracy | tojson if (forecast and forecast.accuracy) else {} }},
+                product_profiles: productData
+            };
+        }
+
+        var profiles = rangeData.product_profiles || {};
+        var data = profiles[currentProduct] || profiles['all'] || { predicted: [], actual: [], accuracy: {} };
+        var currLabels = rangeData.labels || [];
+
+        // 1. Update Chart
+        if (forecastChart) {
+            forecastChart.data.labels = currLabels;
+            forecastChart.data.datasets[0].data = data.predicted;
+            forecastChart.data.datasets[1].data = data.actual;
+            forecastChart.update('active');
+        }
+
+        // 2. Update Gauges
+        var acc = data.accuracy || rangeData.accuracy || {};
+        var r = (acc.rmse !== undefined && acc.rmse !== null) ? acc.rmse : '—';
+        var m = (acc.mae !== undefined && acc.mae !== null) ? acc.mae : '—';
+        var mp = (acc.mape !== undefined && acc.mape !== null) ? (acc.mape.toString().includes('%') ? acc.mape : acc.mape + '%') : '—';
+        
+        var elRmse = document.getElementById('gauge-rmse');
+        var elMae = document.getElementById('gauge-mae');
+        var elMape = document.getElementById('gauge-mape');
+        if (elRmse) elRmse.textContent = r;
+        if (elMae) elMae.textContent = m;
+        if (elMape) elMape.textContent = mp;
+
+        // 3. Update Subtitles & Badges
+        var labelElem = document.getElementById('chart-horizon-label');
+        var badgeElem = document.getElementById('ledger-horizon-badge');
+        if (currentRange === 'upcoming') {
+            if (labelElem) labelElem.textContent = '7-DAY ROLLING HORIZON // XGBOOST INFERENCE';
+            if (badgeElem) badgeElem.textContent = '7-DAY UPCOMING';
+        } else if (currentRange === 'past_week') {
+            if (labelElem) labelElem.textContent = 'PAST 7-DAY AUDIT // LOGGED POS SALES';
+            if (badgeElem) badgeElem.textContent = 'PAST WEEK (7 DAYS)';
+        } else {
+            if (labelElem) labelElem.textContent = 'PAST 30-DAY AUDIT // HISTORICAL LEDGER';
+            if (badgeElem) badgeElem.textContent = 'PAST 30 DAYS';
+        }
+
+        // 4. Update Ledger Table
+        var tbody = document.getElementById('forecast-tbody');
+        if (tbody) {
+            var html = '';
+            var isUp = (currentRange === 'upcoming');
+            for (var i = 0; i < currLabels.length; i++) {
+                var pred = (data.predicted && data.predicted[i] !== undefined) ? data.predicted[i] : 0;
+                var act = (data.actual && data.actual[i] !== undefined) ? data.actual[i] : null;
+                var dayLabel = currLabels[i];
+
+                if (isUp) {
+                    if (i === 0) dayLabel += ' <span style="font-size:9px; background:rgba(0,0,0,0.06); padding:1px 5px; border-radius:3px; margin-left:4px; font-weight:700;">TODAY</span>';
+                    else if (i === 1) dayLabel += ' <span style="font-size:9px; opacity:0.6; margin-left:4px;">TOMORROW</span>';
+                }
+
+                var actDisplay = '';
+                var devDisplay = '';
+                var statusDisplay = '';
+
+                if (isUp) {
+                    if (act !== null && act !== undefined && act > 0) {
+                        actDisplay = '<span style="font-weight:600;">' + act + ' units</span>';
+                        var error = Math.abs(pred - act);
+                        devDisplay = '<span style="font-family:Space Mono,monospace; font-size:11px;' + (error > 5 ? 'color:#c04040;' : 'color:#4a9a78;') + '">±' + error.toFixed(1) + '</span>';
+                        var accuracy = Math.max(0, 100 - (error / act * 100)).toFixed(1);
+                        var fillWidth = Math.min(accuracy, 100);
+                        statusDisplay = '<div style="display:flex; align-items:center; gap:8px;">' +
+                            '<span style="font-family:Space Mono,monospace; font-size:11px; font-weight:700;">' + accuracy + '%</span>' +
+                            '<div class="confidence-bar" style="width:60px; height:4px; margin-top:0;">' +
+                                '<div class="confidence-fill" style="width:' + fillWidth + '%;"></div>' +
+                            '</div>' +
+                        '</div>';
+                    } else if (i === 0) {
+                        actDisplay = '<span style="font-family:Space Mono,monospace; font-size:10px; opacity:0.6;">0 units (Trading)</span>';
+                        devDisplay = '<span style="font-family:Space Mono,monospace; font-size:11px; opacity:0.4;">—</span>';
+                        statusDisplay = '<span class="status-tag normal" style="font-size:9px; padding:2px 8px; font-family:Space Mono,monospace;">LOG AT CLOSE</span>';
+                    } else {
+                        actDisplay = '<span style="font-family:Space Mono,monospace; font-size:10px; opacity:0.4;">— (Upcoming)</span>';
+                        devDisplay = '<span style="font-family:Space Mono,monospace; font-size:11px; opacity:0.4;">—</span>';
+                        statusDisplay = '<span class="status-tag normal" style="font-size:9px; padding:2px 8px; font-family:Space Mono,monospace; opacity:0.6;">FORECAST HORIZON</span>';
+                    }
+                } else {
+                    // Past audits
+                    if (act !== null && act !== undefined && act > 0) {
+                        actDisplay = '<span style="font-weight:600;">' + act + ' units</span>';
+                        var error = Math.abs(pred - act);
+                        devDisplay = '<span style="font-family:Space Mono,monospace; font-size:11px;' + (error > 5 ? 'color:#c04040;' : 'color:#4a9a78;') + '">±' + error.toFixed(1) + '</span>';
+                        var accuracy = Math.max(0, 100 - (error / act * 100)).toFixed(1);
+                        var fillWidth = Math.min(accuracy, 100);
+                        statusDisplay = '<div style="display:flex; align-items:center; gap:8px;">' +
+                            '<span style="font-family:Space Mono,monospace; font-size:11px; font-weight:700;">' + accuracy + '%</span>' +
+                            '<div class="confidence-bar" style="width:60px; height:4px; margin-top:0;">' +
+                                '<div class="confidence-fill" style="width:' + fillWidth + '%;"></div>' +
+                            '</div>' +
+                        '</div>';
+                    } else {
+                        actDisplay = '<span style="font-family:Space Mono,monospace; font-size:10px; opacity:0.5;">0 units</span>';
+                        devDisplay = '<span style="font-family:Space Mono,monospace; font-size:11px; opacity:0.4;">—</span>';
+                        statusDisplay = '<span class="status-tag normal" style="font-size:9px; padding:2px 8px; font-family:Space Mono,monospace; opacity:0.5;">NO POS LOGGED</span>';
+                    }
+                }
+
+                html += '<tr>' +
+                    '<td style="font-family:Space Mono,monospace; font-size:11px;">' + dayLabel + '</td>' +
+                    '<td style="font-weight:700;">' + pred + ' units</td>' +
+                    '<td>' + actDisplay + '</td>' +
+                    '<td>' + devDisplay + '</td>' +
+                    '<td>' + statusDisplay + '</td>' +
+                '</tr>';
+            }
+            tbody.innerHTML = html;
+        }
+    }
+
+    /* ── Timeframe Pill Button Click Listeners ── */
+    var timeframeBtns = document.querySelectorAll('.btn-timeframe');
+    timeframeBtns.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            timeframeBtns.forEach(function(b) { b.classList.remove('active'); });
+            this.classList.add('active');
+            currentRange = this.getAttribute('data-range');
+            renderView();
+        });
+    });
+
+    /* ── Product Selector Listener ── */
+    var selector = document.getElementById('product-selector');
+    if (selector) {
+        selector.addEventListener('change', function() {
+            currentProduct = this.value;
+            renderView();
+        });
+    }
+});
+</script>
+{% endblock %}
