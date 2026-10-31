@@ -1,0 +1,433 @@
+{% extends "base_app.html" %}
+{% block title %}Sales Analytics - EcoPrice{% endblock %}
+{% block page_title %}SALES ANALYTICS{% endblock %}
+
+{% block content %}
+<!-- ── Page Header ── -->
+<div class="page-header-receipt">
+    <div class="label-group">
+        <span class="kpi-label" style="margin-top:0;">01</span>
+        <span class="kpi-label" style="margin-top:0;">SYS / TRANSACTION TELEMETRY</span>
+    </div>
+    <div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px;">
+        <div>
+            <h1 class="page-heading">Sales Analytics</h1>
+            <p class="page-brief">Transaction velocity, category breakdowns, and product revenue yields synthesized from point-of-sale registers.</p>
+        </div>
+        <div class="filter-bar" style="margin-bottom:0;">
+            <button class="filter-pill active" data-period="daily">DAILY</button>
+            <button class="filter-pill" data-period="weekly">WEEKLY</button>
+            <button class="filter-pill" data-period="monthly">MONTHLY</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── Summary KPI Tickets ── -->
+<div class="page-grid cols-4" style="margin-bottom:24px;">
+    <!-- Total Revenue -->
+    <div class="kpi-ticket accent">
+        <span class="kpi-label">TOTAL REVENUE</span>
+        <div class="kpi-number">Rs.{{ '{:,}'.format(kpis.total_revenue|int) if kpis else '19,79,612' }}</div>
+        <span class="kpi-change positive">+{{ kpis.revenue_change if kpis else '14.2' }}% vs baseline</span>
+    </div>
+
+    <!-- Total Units -->
+    <div class="kpi-ticket">
+        <span class="kpi-label">UNITS SOLD</span>
+        <div class="kpi-number">{{ '{:,}'.format(kpis.total_units|int) if kpis else '83,347' }}</div>
+        <span class="kpi-change positive">+8.2% volume yield</span>
+    </div>
+
+    <!-- Avg Order Value -->
+    <div class="kpi-ticket">
+        <span class="kpi-label">AVG BASKET SIZE</span>
+        <div class="kpi-number">Rs.{{ '{:,.1f}'.format(kpis.avg_order_value) if kpis else '142.6' }}</div>
+        <span class="kpi-change positive">+3.4% basket growth</span>
+    </div>
+
+    <!-- Best Day -->
+    <div class="kpi-ticket accent">
+        <span class="kpi-label">PEAK VOLUME DAY</span>
+        <div class="kpi-number" style="font-size:32px;">{{ kpis.best_day if kpis else 'Saturday' }}</div>
+        <span style="font-family:'Space Mono',monospace; font-size:10px; opacity:0.75; display:block; margin-top:6px;">Highest footfall index (Rs.39,534)</span>
+    </div>
+</div>
+
+<!-- ── Main Analytics Charts ── -->
+<div class="page-grid cols-8-4" style="margin-bottom:24px;">
+    <!-- Revenue Trend Chart -->
+    <div class="chart-ticket">
+        <div class="segment" style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <span class="kpi-label" style="margin-top:0;">02</span>
+                <h3 style="font-family:'Playfair Display',serif; font-size:24px; font-weight:700; margin-top:4px;">Revenue Velocity</h3>
+            </div>
+            <span class="status-tag normal" id="period-indicator">DAILY ACTIVE</span>
+        </div>
+        <div class="segment-mid">
+            <div class="chart-area">
+                <canvas id="revenueTrendChart" style="max-height:280px;"></canvas>
+            </div>
+        </div>
+        <div class="segment-bottom" style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-family:'Space Mono',monospace; font-size:9px; text-transform:uppercase; letter-spacing:1px; opacity:0.5;">POINT-OF-SALE TRANSACTION RECONCILIATION</span>
+            <div class="barcode-deco short"></div>
+        </div>
+    </div>
+
+    <!-- Category Revenue Donut Chart -->
+    <div class="chart-ticket">
+        <div class="segment">
+            <span class="kpi-label" style="margin-top:0;">03</span>
+            <h3 style="font-family:'Playfair Display',serif; font-size:24px; font-weight:700; margin-top:4px;">Category Share</h3>
+        </div>
+        <div class="segment-mid">
+            <div class="chart-area">
+                <canvas id="categoryRevenueChart" style="max-height:280px;"></canvas>
+            </div>
+        </div>
+        <div class="segment-bottom" style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-family:'Space Mono',monospace; font-size:9px; text-transform:uppercase; letter-spacing:1px; opacity:0.5;">NET CATEGORY PROPORTIONS</span>
+            <div class="barcode-deco short"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Product Insights Row ── -->
+<div class="page-grid cols-2" style="margin-bottom:24px;">
+    <!-- Top Products Horizontal Bar Chart -->
+    <div class="chart-ticket">
+        <div class="segment">
+            <span class="kpi-label" style="margin-top:0;">04</span>
+            <h3 style="font-family:'Playfair Display',serif; font-size:24px; font-weight:700; margin-top:4px;">Top Products by Revenue</h3>
+        </div>
+        <div class="segment-mid">
+            <div class="chart-area">
+                <canvas id="topProductsChart" style="max-height:260px;"></canvas>
+            </div>
+        </div>
+        <div class="segment-bottom" style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-family:'Space Mono',monospace; font-size:9px; text-transform:uppercase; letter-spacing:1px; opacity:0.5;">TOP 5 MERCHANDISE CONTRIBUTORS</span>
+            <div class="barcode-deco short"></div>
+        </div>
+    </div>
+
+    <!-- Dual Axis: Revenue vs Units Sold -->
+    <div class="chart-ticket">
+        <div class="segment">
+            <span class="kpi-label" style="margin-top:0;">05</span>
+            <h3 style="font-family:'Playfair Display',serif; font-size:24px; font-weight:700; margin-top:4px;">Yield vs Volume</h3>
+        </div>
+        <div class="segment-mid">
+            <div class="chart-area">
+                <canvas id="dualAxisChart" style="max-height:260px;"></canvas>
+            </div>
+        </div>
+        <div class="segment-bottom" style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-family:'Space Mono',monospace; font-size:9px; text-transform:uppercase; letter-spacing:1px; opacity:0.5;">DUAL-AXIS VOLUME OVERLAY</span>
+            <div class="barcode-deco short"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Top Products Receipt Table Ticket ── -->
+<div class="chart-ticket" style="margin-bottom:24px;">
+    <div class="segment" style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+            <span class="kpi-label" style="margin-top:0;">06</span>
+            <h3 style="font-family:'Playfair Display',serif; font-size:24px; font-weight:700; margin-top:4px;">Merchandise Ledger</h3>
+        </div>
+        <span class="status-tag normal">AUDITED REGISTER</span>
+    </div>
+    <div class="segment-mid" style="padding:0 24px 20px;">
+        <table class="receipt-table">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Category</th>
+                    <th>Revenue Yield</th>
+                    <th>Volume (Units)</th>
+                    <th>Trend Deviation</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in top_products %}
+                <tr>
+                    <td>
+                        <span class="product-name">{{ product.name }}</span>
+                    </td>
+                    <td>
+                        <span class="status-tag normal" style="font-size:9px; padding:2px 8px;">{{ product.category }}</span>
+                    </td>
+                    <td style="font-weight:700;">Rs.{{ '{:,}'.format(product.revenue) }}</td>
+                    <td>{{ product.units }} units</td>
+                    <td>
+                        <span class="kpi-change {{ 'positive' if product.trend > 0 else 'negative' }}">
+                            {{ '+' if product.trend > 0 else '' }}{{ product.trend }}%
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="segment-bottom" style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-family:'Space Mono',monospace; font-size:9px; text-transform:uppercase; letter-spacing:1px; opacity:0.5;">END OF MERCHANDISE REGISTRY</span>
+        <div class="barcode-deco short"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var salesData = {{ sales | tojson | safe }};
+    var topProductsData = {{ top_products | tojson | safe }};
+
+    Chart.defaults.font.family = "'Space Grotesk', sans-serif";
+    Chart.defaults.font.size = 11;
+    Chart.defaults.color = '#888888';
+
+    var tooltipStyle = {
+        backgroundColor: '#1a1a1a',
+        titleFont: { family: "'Space Mono', monospace", size: 10, weight: '700' },
+        bodyFont: { family: "'Space Grotesk', sans-serif", size: 12 },
+        padding: 12,
+        cornerRadius: 12,
+        borderColor: 'rgba(0,0,0,0.1)',
+        borderWidth: 1
+    };
+
+    /* ── Revenue Velocity Line Chart ── */
+    var ctxRevenue = document.getElementById('revenueTrendChart');
+    var revenueChart = null;
+    if (ctxRevenue) {
+        var gradRevenue = ctxRevenue.getContext('2d').createLinearGradient(0, 0, 0, 280);
+        gradRevenue.addColorStop(0, 'rgba(184, 212, 200, 0.28)');
+        gradRevenue.addColorStop(1, 'rgba(184, 212, 200, 0.01)');
+
+        revenueChart = new Chart(ctxRevenue, {
+            type: 'line',
+            data: {
+                labels: salesData.daily_labels,
+                datasets: [{
+                    label: 'Revenue (Rs.)',
+                    data: salesData.daily_revenue,
+                    borderColor: '#b8d4c8',
+                    backgroundColor: gradRevenue,
+                    borderWidth: 2.5,
+                    tension: 0.35,
+                    fill: true,
+                    pointBackgroundColor: '#b8d4c8',
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: Object.assign({}, tooltipStyle, {
+                        callbacks: {
+                            label: function(ctx) { return 'Rs.' + ctx.parsed.y.toLocaleString('en-IN'); }
+                        }
+                    })
+                },
+                scales: {
+                    x: { grid: { display: false } },
+                    y: {
+                        beginAtZero: false,
+                        grid: { color: 'rgba(0,0,0,0.04)', drawBorder: false },
+                        ticks: {
+                            callback: function(v) { return 'Rs.' + (v / 1000).toFixed(0) + 'K'; }
+                        }
+                    }
+                }
+            }
+        });
+
+        /* Period switchers */
+        document.querySelectorAll('.filter-pill[data-period]').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.filter-pill[data-period]').forEach(function(b) { b.classList.remove('active'); });
+                btn.classList.add('active');
+
+                var period = btn.getAttribute('data-period');
+                var indicator = document.getElementById('period-indicator');
+                if (indicator) indicator.textContent = period.toUpperCase() + ' ACTIVE';
+
+                if (period === 'daily') {
+                    revenueChart.data.labels = salesData.daily_labels;
+                    revenueChart.data.datasets[0].data = salesData.daily_revenue;
+                } else if (period === 'weekly') {
+                    revenueChart.data.labels = salesData.weekly_labels;
+                    revenueChart.data.datasets[0].data = salesData.weekly_revenue;
+                } else if (period === 'monthly') {
+                    revenueChart.data.labels = salesData.monthly_labels;
+                    revenueChart.data.datasets[0].data = salesData.monthly_revenue;
+                }
+                revenueChart.update('active');
+            });
+        });
+    }
+
+    /* ── Category Donut ── */
+    var ctxCategory = document.getElementById('categoryRevenueChart');
+    if (ctxCategory) {
+        new Chart(ctxCategory, {
+            type: 'doughnut',
+            data: {
+                labels: salesData.category_labels,
+                datasets: [{
+                    data: salesData.category_revenue,
+                    backgroundColor: [
+                        '#b8d4c8',
+                        '#c8b8e0',
+                        '#f0c4b0',
+                        '#d4a0a0'
+                    ],
+                    borderWidth: 0,
+                    hoverOffset: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '72%',
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'bottom',
+                        labels: {
+                            font: { family: "'Space Mono', monospace", size: 10 },
+                            usePointStyle: true,
+                            padding: 14
+                        }
+                    },
+                    tooltip: Object.assign({}, tooltipStyle, {
+                        callbacks: {
+                            label: function(ctx) { return ctx.label + ': Rs.' + ctx.parsed.toLocaleString('en-IN'); }
+                        }
+                    })
+                }
+            }
+        });
+    }
+
+    /* ── Top Products Horizontal Bar ── */
+    var ctxTopProducts = document.getElementById('topProductsChart');
+    if (ctxTopProducts) {
+        var names = topProductsData.map(function(p) { return p.name; }).slice(0, 5);
+        var revs = topProductsData.map(function(p) { return p.revenue; }).slice(0, 5);
+
+        new Chart(ctxTopProducts, {
+            type: 'bar',
+            data: {
+                labels: names,
+                datasets: [{
+                    data: revs,
+                    backgroundColor: '#7b9ea8',
+                    borderRadius: 6,
+                    barPercentage: 0.65
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: Object.assign({}, tooltipStyle, {
+                        callbacks: {
+                            label: function(ctx) { return 'Rs.' + ctx.parsed.x.toLocaleString('en-IN'); }
+                        }
+                    })
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(0,0,0,0.04)', drawBorder: false },
+                        ticks: {
+                            callback: function(v) { return 'Rs.' + (v / 1000).toFixed(0) + 'K'; }
+                        }
+                    },
+                    y: { grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    /* ── Dual Axis Volume Overlay ── */
+    var ctxDual = document.getElementById('dualAxisChart');
+    if (ctxDual) {
+        new Chart(ctxDual, {
+            type: 'line',
+            data: {
+                labels: salesData.daily_labels,
+                datasets: [
+                    {
+                        label: 'Revenue (Rs.)',
+                        data: salesData.daily_revenue,
+                        type: 'bar',
+                        backgroundColor: 'rgba(184, 212, 200, 0.4)',
+                        borderColor: '#b8d4c8',
+                        borderWidth: 1,
+                        borderRadius: 4,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Units Sold',
+                        data: salesData.daily_units,
+                        type: 'line',
+                        borderColor: '#c8b8e0',
+                        backgroundColor: '#c8b8e0',
+                        borderWidth: 2.5,
+                        tension: 0.35,
+                        yAxisID: 'y1',
+                        pointRadius: 3
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        align: 'end',
+                        labels: {
+                            font: { family: "'Space Mono', monospace", size: 10 },
+                            usePointStyle: true,
+                            boxWidth: 8
+                        }
+                    },
+                    tooltip: tooltipStyle
+                },
+                scales: {
+                    x: { grid: { display: false } },
+                    y: {
+                        type: 'linear',
+                        position: 'left',
+                        grid: { color: 'rgba(0,0,0,0.04)', drawBorder: false },
+                        ticks: {
+                            callback: function(v) { return 'Rs.' + (v / 1000).toFixed(0) + 'K'; }
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        position: 'right',
+                        grid: { drawOnChartArea: false },
+                        ticks: {
+                            callback: function(v) { return v + ' u'; }
+                        }
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

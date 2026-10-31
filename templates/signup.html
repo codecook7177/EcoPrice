@@ -1,0 +1,199 @@
+{% extends "base_public.html" %}
+{% block title %}Sign Up — EcoPrice{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+
+    <!-- Left: Artistic Panel -->
+    <div class="auth-art">
+        <div class="auth-art-inner">
+            <div class="auth-art-ring"></div>
+        </div>
+    </div>
+
+    <!-- Right: Signup Form -->
+    <div class="auth-form-panel">
+
+        <!-- Top bar -->
+        <div class="auth-topbar">
+            <span class="auth-topbar-left">SYS.CORE // ON-LINE</span>
+            <div class="auth-topbar-right">
+                <span>V01.00</span>
+                <button class="theme-toggle-btn" onclick="toggleTheme()">DARK</button>
+            </div>
+        </div>
+
+        <!-- Form Card -->
+        <div class="auth-card">
+            <div class="auth-badge">ECOPRICE.AUTH</div>
+            <h1 class="auth-heading">Register</h1>
+            <p class="auth-subtitle">Create your store manager credential.</p>
+
+            {% if error %}
+            <div style="margin: 16px 0; padding: 12px 14px; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 4px; color: #f87171; font-family: 'Space Grotesk', sans-serif; font-size: 13px;">
+                {{ error }}
+            </div>
+            {% endif %}
+
+            <form action="/signup" method="POST">
+                <div class="form-field">
+                    <label for="name">STORE MANAGER NAME</label>
+                    <input type="text" id="name" name="name" placeholder="e.g. John Doe" required autocomplete="name">
+                </div>
+
+                <div class="form-field">
+                    <label for="email">STORE MANAGER EMAIL</label>
+                    <input type="email" id="email" name="email" placeholder="manager@store.com" required autocomplete="email">
+                </div>
+
+                <div class="form-field">
+                    <label for="password">PASSCODE</label>
+                    <input type="password" id="password" name="password" placeholder="••••••••••••" required>
+                </div>
+
+                <div class="form-field">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                        <label for="location" style="margin-bottom:0;">STORE LOCATION (CLIMATE &amp; WEATHER)</label>
+                        <button type="button" id="btn-signup-gps" style="background:none; border:none; color:#4a9a78; font-family:'Space Mono',monospace; font-size:10px; font-weight:700; cursor:pointer; padding:0; text-decoration:underline;">
+                            [DETECT VIA GPS]
+                        </button>
+                    </div>
+                    <select id="location" name="location" class="auth-location-select" onchange="if(this.value==='AUTO_DETECT') triggerSignupLocationDetect();" style="width: 100%; padding: 12px 14px; background: rgba(0,0,0,0.2); border: 1px solid var(--color-border); color: inherit; font-family: 'Space Grotesk', sans-serif; font-size: 13px; border-radius: 4px; box-sizing: border-box;">
+                        <option value="AUTO_DETECT">// DETECT STORE LOCATION (GPS)</option>
+                        {% if supported_cities %}
+                            {% for c in supported_cities %}
+                            <option value="{{ c.city }}" {% if c.city == 'Kochi' %}selected{% endif %}>
+                                {{ c.city }}, {{ c.state }} &mdash; {{ c.climate }}
+                            </option>
+                            {% endfor %}
+                        {% else %}
+                            <option value="Kochi" selected>Kochi, Kerala &mdash; Coastal Tropical Humid</option>
+                            <option value="Visakhapatnam">Visakhapatnam, Andhra Pradesh &mdash; Coastal Bay (32.8°C)</option>
+                            <option value="Bengaluru">Bengaluru, Karnataka &mdash; Moderate Plateau (24.5°C)</option>
+                            <option value="Chennai">Chennai, Tamil Nadu &mdash; Tropical Coastal Heat (34.2°C)</option>
+                            <option value="Mumbai">Mumbai, Maharashtra &mdash; Humid Maritime (32.0°C)</option>
+                            <option value="Delhi">Delhi, NCR &mdash; Semi-Arid Continental (33.8°C)</option>
+                            <option value="Hyderabad">Hyderabad, Telangana &mdash; Deccan Warm (30.0°C)</option>
+                            <option value="Kolkata">Kolkata, West Bengal &mdash; Delta Tropical (32.5°C)</option>
+                            <option value="Pune">Pune, Maharashtra &mdash; Inland Semi-Arid (27.8°C)</option>
+                        {% endif %}
+                    </select>
+                    <div id="signup-location-status" style="font-family: 'Space Mono', monospace; font-size: 10px; color: #4a9a78; margin-top: 6px; display: none;"></div>
+                    <div style="font-family: 'Space Mono', monospace; font-size: 9px; opacity: 0.6; margin-top: 4px;">
+                        Perishable decay curves &amp; PPO markdowns calibrate to this city's ambient temperature &amp; humidity.
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-auth primary">
+                    CREATE ACCOUNT &rarr;
+                </button>
+            </form>
+
+            <p class="auth-footer">
+                Already have an account? <a href="/login">Log in</a>
+            </p>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function triggerSignupLocationDetect() {
+        var statusEl = document.getElementById('signup-location-status');
+        var selectEl = document.getElementById('location');
+        var btn = document.getElementById('btn-signup-gps');
+        
+        if (statusEl) {
+            statusEl.style.display = 'block';
+            statusEl.textContent = 'DETECTING STORE GPS COORDINATES...';
+            statusEl.style.color = '#c08030';
+        }
+        if (btn) btn.textContent = '[LOCATING...]';
+
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                function(pos) {
+                    var lat = pos.coords.latitude;
+                    var lon = pos.coords.longitude;
+                    var bdcUrl = 'https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=' + lat + '&longitude=' + lon + '&localityLanguage=en';
+                    fetch(bdcUrl)
+                    .then(function(r) { return r.json(); })
+                    .then(function(geo) {
+                        var detectedCity = geo.locality || geo.city || geo.principalSubdivision || '';
+                        applyDetectedCity(detectedCity, lat, lon);
+                    })
+                    .catch(function() {
+                        fallbackIpDetect();
+                    });
+                },
+                function(err) {
+                    fallbackIpDetect();
+                },
+                { timeout: 8000 }
+            );
+        } else {
+            fallbackIpDetect();
+        }
+
+        function fallbackIpDetect() {
+            fetch('https://ipapi.co/json/')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                applyDetectedCity(data.city || 'Visakhapatnam', data.latitude || 17.68, data.longitude || 83.21);
+            })
+            .catch(function() {
+                if (statusEl) {
+                    statusEl.textContent = 'GPS UNREACHABLE — CALIBRATED TO VISAKHAPATNAM, AP';
+                    statusEl.style.color = '#4a9a78';
+                }
+                if (btn) btn.textContent = '[DETECT VIA GPS]';
+                selectEl.value = 'Visakhapatnam';
+            });
+        }
+
+        function applyDetectedCity(cityName, lat, lon) {
+            if (!cityName) cityName = 'Visakhapatnam';
+            var matchedOption = null;
+            for (var i = 0; i < selectEl.options.length; i++) {
+                var opt = selectEl.options[i];
+                if (opt.value === 'AUTO_DETECT') continue;
+                if (opt.value.toLowerCase() === cityName.toLowerCase() || opt.textContent.toLowerCase().indexOf(cityName.toLowerCase()) !== -1) {
+                    matchedOption = opt;
+                    break;
+                }
+            }
+            if (matchedOption) {
+                selectEl.value = matchedOption.value;
+                if (statusEl) {
+                    statusEl.textContent = 'STORE LOCATION DETECTED: ' + matchedOption.textContent.trim();
+                    statusEl.style.color = '#4a9a78';
+                }
+            } else {
+                var newOpt = document.createElement('option');
+                newOpt.value = cityName;
+                newOpt.textContent = cityName + ' (GPS Detected)';
+                newOpt.selected = true;
+                selectEl.appendChild(newOpt);
+                if (statusEl) {
+                    statusEl.textContent = 'GPS ACCURATE: ' + cityName + (lat ? ' (' + lat.toFixed(2) + '°N, ' + lon.toFixed(2) + '°E)' : '');
+                    statusEl.style.color = '#4a9a78';
+                }
+            }
+            if (btn) btn.textContent = '[RE-DETECT GPS]';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        var gpsBtn = document.getElementById('btn-signup-gps');
+        if (gpsBtn) {
+            gpsBtn.addEventListener('click', triggerSignupLocationDetect);
+        }
+        var theme = document.documentElement.getAttribute('data-theme') || 'dark';
+        document.querySelectorAll('.theme-toggle-btn').forEach(function(btn) {
+            btn.textContent = theme === 'dark' ? 'DARK' : 'LIGHT';
+        });
+    });
+</script>
+{% endblock %}
