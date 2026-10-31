@@ -12,7 +12,7 @@
 
 **A reinforcement learning and supervised demand forecasting platform designed to minimize perishable wastage and maximize retail profits.**
 
-[Architecture](#system-architecture) &bull; [Empirical Results](#empirical-results) &bull; [Quick Start](#getting-started)
+[Architecture](#system-architecture) &bull; [Quick Start](#getting-started)
 
 </div>
 
@@ -63,30 +63,6 @@ Perishable grocery departments (dairy, fresh produce, meat, poultry, seafood, an
 
 ---
 
-## Empirical Results
-
-The demand forecasting and reinforcement learning architectures were evaluated using unseen chronological test splits and retail simulation benchmarks.
-
-### 1. Demand Forecasting Performance (XGBoost)
-
-| Product Department | Samples | $R^2$ Score | MAE (Units/Day) | RMSE |
-| :--- | :---: | :---: | :---: | :---: |
-| **Dairy & Eggs** | 2,840 | **0.8912** | 16.45 | 22.18 |
-| **Fruits & Vegetables** | 4,215 | **0.8741** | 19.82 | 26.54 |
-| **Meat, Poultry & Seafood** | 1,980 | **0.8490** | 23.10 | 31.42 |
-| **Bakery & Confectionery** | 1,545 | **0.8320** | 25.11 | 34.05 |
-| **Combined Perishable Catalog** | **10,580** | **0.8653** | **21.12** | **28.55** |
-
-### 2. Reinforcement Learning Policy Evaluation (PPO vs Baselines)
-
-| Performance Metric | Static Pricing (No Discount) | Heuristic Rule-Based | EcoPrice PPO Agent | Relative Impact |
-| :--- | :---: | :---: | :---: | :---: |
-| **Inventory Waste Rate** | 21.40% of inventory | 9.85% of inventory | **3.06% of inventory** | **-85.7% Waste Reduction** |
-| **Salvage Revenue Recovery** | ₹14,200 | ₹19,850 | **₹24,850** | **+75.0% Revenue Lift** |
-| **Gross Margin Retention** | 78.60% | 83.15% | **89.42%** | **+10.82% Margin Preservation** |
-| **Average Markdown Rate** | 0.00% (or write-off) | 22.50% | **14.20%** | Controlled Price Integrity |
-
----
 
 ## Technology Stack
 
